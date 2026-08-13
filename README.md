@@ -1,4 +1,9 @@
-# ESP32 Web Runner
+# ESP32 MPY Web Runner v1.0.0
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+**ESP32 MPY Web Runner** 是一个运行在 ESP32-S3 上的轻量级 Web IDE，让你通过浏览器编写、运行、管理
+多个 MicroPython 程序，无需安装任何 PC 软件，插电即用。
 
 在 ESP32-S3 (N16R8) 上运行的 **网页版编程 / 程序管理** 系统：
 整页前端存在板子 flash 上，浏览器访问即得到一个 **Web IDE** —— 可以新建、编辑、保存、启动、停止、
@@ -16,10 +21,9 @@
 
 ## 文件结构
 
-> 仓库根目录另有 `.gitignore`（忽略 `__pycache__/`、`*.pyc`、`*.tmp`、`*.log`）。
+> 仓库根目录另有 `.gitignore`（忽略 `__pycache__/`、`*.pyc`、`*.tmp`、`*.log`、板子运行生成的 `config.json`）。
 
 ```
-esp32-web-runner/
 ├── boot.py                # 开机初始化（加载路径）
 ├── main.py                # 启动服务器 + 调度器 + 看门狗
 ├── lib/
@@ -115,3 +119,11 @@ esp32-web-runner/
 ```
 python tools/smoke_test.py     # PC 上跑 REST API + 调度器全流程，全部通过
 ```
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request。也欢迎 Star / Fork。
+
+## 许可证
+
+本项目采用 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) 开源协议。
