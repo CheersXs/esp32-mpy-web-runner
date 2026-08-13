@@ -344,12 +344,13 @@
   /* ---------- 设置 ---------- */
   function loadSettings() {
     api('/api/config').then(function (cfg) {
-      $('cfg-sta-ssid').value = cfg.wifi.ssid || '';
+      $('cfg-sta-ssid-manual').value = cfg.wifi.ssid || '';
       $('cfg-sta-pass').value = '';
       $('cfg-ap-ssid').value = cfg.ap.ssid || '';
       $('cfg-ap-pass').value = '';
       $('cfg-auth-enabled').checked = !!cfg.auth.enabled;
       $('cfg-auth-pass').value = '';
+      showWifiStatus();
       var wrap = $('cfg-autostart-wrap');
       wrap.innerHTML = '<legend>开机自启动程序</legend>';
       state.programs.forEach(function (p) {
@@ -367,13 +368,49 @@
     }).catch(function (err) { $('settings-msg').textContent = err.message; });
   }
 
+  function showWifiStatus() {
+    var el = $('wifi-status');
+    var net = (state.sys && state.sys.net) ? state.sys.net : {};
+    var txt = '';
+    if (net.sta_connected) txt = '当前已连接 WiFi：' + net.sta_ip;
+    else if (net.sta_ip) txt = '正在连接 WiFi…';
+    else txt = '未连接 WiFi（仅热点模式）';
+    el.textContent = txt;
+  }
+
+  function scanWifi() {
+    var msgEl = $('wifi-scan-msg');
+    msgEl.textContent = '扫描中…';
+    var sel = $('cfg-sta-ssid');
+    sel.innerHTML = '';
+    sel.classList.remove('hidden');
+    api('/api/scan').then(function (data) {
+      var nets = data.networks || [];
+      if (!nets.length) { msgEl.textContent = '附近没有发现可用 WiFi'; return; }
+      nets.sort(function (a, b) { return (b.rssi || -200) - (a.rssi || -200); });
+      nets.forEach(function (n) {
+        var opt = document.createElement('option');
+        opt.value = n.ssid;
+        opt.textContent = n.ssid + '  (' + n.rssi + 'dBm)';
+        sel.appendChild(opt);
+      });
+      sel.classList.remove('hidden');
+      msgEl.textContent = '点击下拉选择要连接的 WiFi，然后填密码';
+    }).catch(function (err) { msgEl.textContent = '扫描失败：' + err.message; });
+  }
+
+  function useScanSelection() {
+    var sel = $('cfg-sta-ssid');
+    if (sel.value) $('cfg-sta-ssid-manual').value = sel.value;
+  }
+
   function saveSettings() {
     var autostart = [];
     Array.prototype.forEach.call(
       $('cfg-autostart-wrap').querySelectorAll('input[type=checkbox]:checked'),
       function (cb) { autostart.push(cb.value); });
     var body = {
-      wifi: { ssid: $('cfg-sta-ssid').value.trim(), password: $('cfg-sta-pass').value },
+      wifi: { ssid: $('cfg-sta-ssid-manual').value.trim(), password: $('cfg-sta-pass').value },
       ap: { ssid: $('cfg-ap-ssid').value.trim(), password: $('cfg-ap-pass').value },
       auth: { enabled: $('cfg-auth-enabled').checked, password: $('cfg-auth-pass').value },
       autostart: autostart,
@@ -429,6 +466,8 @@
     });
     $('btn-clear-console').addEventListener('click', function () { consoleEl.innerHTML = ''; });
     $('btn-settings').addEventListener('click', function () { loadSettings(); show('settings-modal'); });
+    $('btn-scan').addEventListener('click', function (e) { e.preventDefault(); scanWifi(); });
+    $('cfg-sta-ssid').addEventListener('change', useScanSelection);
     $('settings-save').addEventListener('click', saveSettings);
     $('settings-cancel').addEventListener('click', function () { hide('settings-modal'); });
     $('btn-login').addEventListener('click', showLogin);

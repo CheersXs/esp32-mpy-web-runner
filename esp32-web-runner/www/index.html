@@ -112,10 +112,13 @@
     <div class="modal-body">
       <fieldset>
         <legend>WiFi（STA，连你家路由器）</legend>
-        <label>SSID</label>
-        <input id="cfg-sta-ssid" type="text" placeholder="路由器名称">
+        <label>SSID <button id="btn-scan" class="btn ghost small" type="button">扫描附近 WiFi</button></label>
+        <select id="cfg-sta-ssid" class="scan-select hidden" title="附近可用的 WiFi"></select>
+        <input id="cfg-sta-ssid-manual" type="text" placeholder="路由器名称">
         <label>密码（留空保持原密码不变）</label>
         <input id="cfg-sta-pass" type="password" placeholder="••••••">
+        <div id="wifi-scan-msg" class="muted"></div>
+        <div id="wifi-status" class="muted"></div>
       </fieldset>
       <fieldset>
         <legend>热点（AP，板上自建）</legend>

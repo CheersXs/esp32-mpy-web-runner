@@ -48,13 +48,16 @@ def main():
     con._push(' ESP32 Web Runner 启动中...')
     con._push('*' * 46)
 
-    netinfo = net.setup_network(cfg)
+    netinfo = net.setup_network(cfg, con)
     if netinfo['ap_ip']:
         con._push('[net] AP  运行中  http://%s  (主机名:%s)' %
                   (netinfo['ap_ip'], cfg['ap'].get('ssid', 'ESP32-S3')))
     if netinfo['sta_connected']:
         con._push('[net] STA 已连接  http://%s  (ssid:%s)' %
                   (netinfo['sta_ip'], netinfo['sta_ssid']))
+    elif netinfo['sta_ssid']:
+        con._push('[net] STA 连接中 %r（后台线程，不影响启动）' %
+                  netinfo['sta_ssid'])
     else:
         con._push('[net] STA 未连接（可在网页设置里配置 WiFi）')
 

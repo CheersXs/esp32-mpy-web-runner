@@ -52,12 +52,13 @@ def run(cmd, port, remote=False):
 
 
 def mkdir(port, path):
-    # mpremote fs mkdir 已存在时不算致命
-    return run(['fs', 'mkdir', path], port, remote=True)
+    # mpremote fs mkdir 已存在时不算致命；远程路径需带 ':' 前缀
+    return run(['fs', 'mkdir', ':', path], port, remote=True)
 
 
 def upload_file(port, local, remote):
-    r = run(['fs', 'cp', local, remote], port, remote=True)
+    # mpremote 1.28: 远程路径必须显式带 ':' 前缀，否则视为本地路径
+    r = run(['fs', 'cp', local, ':' + remote], port, remote=True)
     if r.returncode != 0:
         print('  ! 上传失败 %s -> %s: %s' % (local, remote, r.stderr.strip()))
         return False
@@ -104,12 +105,11 @@ def main():
                 upload_file(args.port, os.path.join(ex, fn),
                             '/programs/' + fn)
 
-    # 把根目录的旧 led.py 挪进 programs/ 以便网页管理
-    r = run(['fs', 'ls', '/'], args.port, remote=True)
+    # 清理板上旧版根目录 led.py（新版已作为示例程序在 /programs/led.py）
+    r = run(['fs', 'ls', ':/'], args.port, remote=True)
     if 'led.py' in (r.stdout + r.stderr):
-        print('迁移 /led.py -> /programs/led.py')
-        mkdir(args.port, '/programs')
-        run(['fs', 'mv', '/led.py', '/programs/led.py'], args.port, remote=True)
+        print('删除旧版 /led.py（新版示例已上传至 /programs/led.py）')
+        run(['fs', 'rm', ':/led.py'], args.port, remote=True)
 
     print('---')
     print('上传完成。现在软复位板子让它加载新系统 ...')

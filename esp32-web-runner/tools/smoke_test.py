@@ -318,6 +318,11 @@ async def main():
     r = await cli.get('/%2e%2e%2fconfig.json')
     check('GET 编码穿越被拒', r.status_code == 404)
 
+    # 16b. WiFi 扫描（PC 无 network 模块，应返回优雅错误而非崩溃）
+    r = await cli.get('/api/scan')
+    check('GET /api/scan 有响应', r.status_code in (200, 400))
+    check('GET /api/scan 返回 dict', isinstance(r.json, dict))
+
     # 17. WebSocket Hub：历史回放 + 清空 + ping 应答（不依赖真实 socket）
     class FakeWS:
         def __init__(self):

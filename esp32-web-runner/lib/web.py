@@ -382,7 +382,7 @@ def create_app(manager, hub):
     @authed
     async def api_reboot(request):
         async def _do():
-            await asyncio.sleep_ms(200)
+            await _sleep_ms(200)
             try:
                 import machine
                 machine.reset()
@@ -390,6 +390,40 @@ def create_app(manager, hub):
                 pass
         asyncio.create_task(_do())
         return _ok('正在重启...')
+
+    # ---------- WiFi 扫描 ----------
+
+    @app.get('/api/scan')
+    @authed
+    async def api_scan(request):
+        try:
+            import network
+        except Exception:
+            return _json_error('当前环境不支持网络扫描')
+        try:
+            sta = network.WLAN(network.STA_IF)
+            was_active = bool(sta.active())
+            if not was_active:
+                sta.active(True)
+            try:
+                results = sta.scan()
+            finally:
+                if not was_active and sta.active():
+                    sta.active(False)
+        except Exception as e:
+            return _json_error('扫描失败：%s' % str(e))
+        out = []
+        for n in results:
+            try:
+                ssid = n[0].decode('utf-8', 'replace') if isinstance(n[0], bytes) else str(n[0])
+            except Exception:
+                ssid = ''
+            if not ssid:
+                continue
+            rssi = n[3] if len(n) > 3 else 0
+            auth = n[4] if len(n) > 4 else 0
+            out.append({'ssid': ssid, 'rssi': rssi, 'auth': auth})
+        return {'networks': out}
 
     # ---------- WebSocket 实时控制台 ----------
 
