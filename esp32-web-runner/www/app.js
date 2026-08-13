@@ -149,7 +149,7 @@
   function refreshPrograms(keepSelection, after) {
     api('/api/programs').then(function (data) {
       state.programs = data.programs || [];
-      renderList(state.current || (keepSelection && after));
+      renderList(state.current);
       if (after) after();
     }).catch(function (err) { console.error(err); });
   }
@@ -296,7 +296,11 @@
         var msg = JSON.parse(ev.data);
         if (msg.type === 'console') {
           if (msg.action === 'cleared') { consoleEl.innerHTML = ''; appendConsole('— 控制台已清空 —'); return; }
-          if (!state.wsReady) { state.queuedConsole.push({ line: msg.line, cls: null }); return; }
+          if (!state.wsReady) {
+            state.queuedConsole.push({ line: msg.line, cls: null });
+            if (state.queuedConsole.length > 500) state.queuedConsole.shift();
+            return;
+          }
           appendConsole(msg.line);
         }
       } catch (e) { }

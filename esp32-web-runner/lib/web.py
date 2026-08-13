@@ -76,7 +76,11 @@ def _authorized(request):
         return True
     if auth.get('password') == '':
         return True
+    # 同时支持 Cookie 与 X-Auth-Token 请求头（前端用请求头发 token）
     token = request.cookies.get('token')
+    if token in _sessions:
+        return True
+    token = request.headers.get('X-Auth-Token', '')
     if token in _sessions:
         return True
     return False

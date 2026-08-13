@@ -10,11 +10,32 @@
 import time as _time
 
 _stop_flags = {}
-_current = [None]
+# 当前程序名按"线程/任务"隔离，避免多程序并发时 should_stop() 串扰。
+# key: ('t', thread_id) 同步线程  /  ('a', id(task)) 异步任务  /  ('m', 0) 主线程
+_current = {}
+
+
+def _ctx_key():
+    try:
+        import _thread
+        return ('t', _thread.get_ident())
+    except Exception:
+        pass
+    try:
+        import asyncio
+        t = asyncio.current_task()
+        if t is not None:
+            return ('a', id(t))
+    except Exception:
+        pass
+    return ('m', 0)
 
 
 def _set_current(name):
-    _current[0] = name
+    if name is None:
+        _current.pop(_ctx_key(), None)
+    else:
+        _current[_ctx_key()] = name
 
 
 def _set_stop(name, value):
@@ -22,7 +43,7 @@ def _set_stop(name, value):
 
 
 def should_stop():
-    name = _current[0]
+    name = _current.get(_ctx_key())
     if name is None:
         return False
     return _stop_flags.get(name, False)

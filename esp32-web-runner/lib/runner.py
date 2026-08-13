@@ -184,7 +184,7 @@ class Manager:
 
     def start(self, name):
         p = self.programs.get(name)
-        if p is not None and p.task is not None:
+        if p is not None and (p.task is not None or p.status == 'running'):
             raise RuntimeError('程序已在运行')
         code = self.read_code(name)
         p = self.get_program(name)
