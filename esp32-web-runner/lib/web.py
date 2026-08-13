@@ -3,6 +3,7 @@
 import gc
 import os
 import sys
+import time
 
 try:
     import json
@@ -61,12 +62,32 @@ _EXT_TYPES = {
     'map': 'application/json',
 }
 
-_sessions = {}
+_sessions = {}          # token -> 过期时间戳(ms)
+SESSION_TTL_MS = 7 * 24 * 3600 * 1000   # 7 天
 _api = None
+
+
+def _now_ms():
+    """当前时间戳(ms)，兼容 MicroPython(ticks_ms) 与 CPython(time.time)。"""
+    if hasattr(time, 'ticks_ms'):
+        return time.ticks_ms()
+    return int(time.time() * 1000)
 
 
 def _load_cfg():
     return config.load()
+
+
+def _session_valid(token):
+    if not token:
+        return False
+    exp = _sessions.get(token)
+    if exp is None:
+        return False
+    if _now_ms() > exp:
+        _sessions.pop(token, None)
+        return False
+    return True
 
 
 def _authorized(request):
@@ -78,10 +99,10 @@ def _authorized(request):
         return True
     # 同时支持 Cookie 与 X-Auth-Token 请求头（前端用请求头发 token）
     token = request.cookies.get('token')
-    if token in _sessions:
+    if _session_valid(token):
         return True
     token = request.headers.get('X-Auth-Token', '')
-    if token in _sessions:
+    if _session_valid(token):
         return True
     return False
 
@@ -101,7 +122,7 @@ def _ws_authorized(request):
         if part.startswith('token='):
             token = part[6:]
             break
-    return token in _sessions
+    return _session_valid(token)
 
 
 def _live_net():
@@ -178,7 +199,7 @@ def create_app(manager, hub):
         body = request.json or {}
         if str(body.get('password', '')) == str(auth.get('password', '')):
             token = _new_token()
-            _sessions[token] = True
+            _sessions[token] = _now_ms() + SESSION_TTL_MS
             resp = Response(
                 json.dumps({'ok': True, 'token': token}),
                 status_code=200,
@@ -191,6 +212,9 @@ def create_app(manager, hub):
     @authed
     async def logout(request):
         token = request.cookies.get('token')
+        if token in _sessions:
+            del _sessions[token]
+        token = request.headers.get('X-Auth-Token', '')
         if token in _sessions:
             del _sessions[token]
         resp = Response(json.dumps({'ok': True}),

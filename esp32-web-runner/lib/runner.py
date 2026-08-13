@@ -216,7 +216,7 @@ class Manager:
 
     async def _run_async(self, p, code):
         ns = {'__name__': '__main__'}
-        uvm._set_current(p.name)
+        ctx_key = uvm._set_current(p.name)
         uvm._set_stop(p.name, False)
         try:
             gc.collect()
@@ -240,11 +240,11 @@ class Manager:
                 pass
         finally:
             p.task = None
-            uvm._set_current(None)
+            uvm._clear_current(ctx_key)
 
     def _run_sync(self, p, code):
         ns = {'__name__': '__main__'}
-        uvm._set_current(p.name)
+        ctx_key = uvm._set_current(p.name)
         uvm._set_stop(p.name, False)
         try:
             gc.collect()
@@ -265,7 +265,7 @@ class Manager:
         finally:
             if p.status == 'running':
                 p.status = 'stopped'
-            uvm._set_current(None)
+            uvm._clear_current(ctx_key)
             self._sync_count = max(0, self._sync_count - 1)
 
     def stop(self, name):
@@ -285,7 +285,13 @@ class Manager:
             self.stop(name)
         except RuntimeError:
             pass
-        await asyncio.sleep_ms(120)
+        # 轮询等待程序真正停止（异步任务取消后 finally 才置 stopped），
+        # 避免固定延时不够导致 start() 报"程序已在运行"。
+        for _ in range(50):
+            p = self.get_program(name)
+            if p.status == 'stopped' and p.task is None:
+                break
+            await asyncio.sleep_ms(50)
         return self.start(name)
 
     # ---------- 状态 ----------
