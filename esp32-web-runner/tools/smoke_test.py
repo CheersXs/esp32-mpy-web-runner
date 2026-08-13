@@ -5,6 +5,7 @@ REST API 和 asyncio/线程调度逻辑跑一遍。
 用法:  python tools/smoke_test.py
 （可选环境变量 RUN_WITH_LINE=1 在最后再跑一遍单元冒烟）
 """
+import json
 import os
 import sys
 import tempfile
@@ -222,6 +223,148 @@ async def main():
     # 10. 非法操作
     r = await cli.post('/api/programs/nonexist/start', body={})
     check('启动不存在程序报错', r.status_code == 400)
+
+    # 11. #type 类型识别（_resolve_type）
+    check('自动识别 async (含 async def main)',
+          runner.Manager._resolve_type('x = 1\nasync def main():\n    pass\n') == 'async')
+    check('自动识别 sync (无 async def main)',
+          runner.Manager._resolve_type('x = 1\nprint(x)\n') == 'sync')
+    check('#type:sync 强制覆盖 async def main',
+          runner.Manager._resolve_type('#type:sync\nasync def main():\n    pass\n') == 'sync')
+    check('#type:async 强制',
+          runner.Manager._resolve_type('#type:async\nx = 1\n') == 'async')
+
+    # 12. 无 async def main 的异步程序 -> error 状态
+    r = await cli.post('/api/programs', body={'name': 'nomain', 'code': '#type:async\nimport uvm\nprint(1)\n'})
+    check('创建 no-main 异步程序', r.status_code == 200)
+    r = await cli.post('/api/programs/nomain/start', body={})
+    check('启动 no-main 异步程序', r.status_code == 200)
+    for _ in range(60):
+        st = manager.get_program('nomain')
+        if st.status != 'running':
+            break
+        await asyncio.sleep(0.05)
+    check('no-main 程序进入 error 状态', st.status == 'error', 'status=' + st.status)
+
+    # 13. 同步程序协作式停止（uvm.should_stop）
+    SYNC_LOOP = ("#type:sync\n"
+                 "import uvm\n"
+                 "while not uvm.should_stop():\n"
+                 "    uvm.sleep_ms(30)\n"
+                 "    print('sync-loop-tick')\n"
+                 "print('sync-loop-stopped')\n")
+    r = await cli.post('/api/programs', body={'name': 'syncloop', 'code': SYNC_LOOP})
+    check('创建 sync 长循环', r.status_code == 200)
+    r = await cli.post('/api/programs/syncloop/start', body={})
+    check('启动 sync 长循环', r.status_code == 200, (r.text or '')[:120])
+    await asyncio.sleep(0.1)
+    check('sync 循环运行中', manager.is_running('syncloop'))
+    r = await cli.post('/api/programs/syncloop/stop', body={})
+    check('停止 sync 长循环', r.status_code == 200)
+    for _ in range(60):
+        st = manager.get_program('syncloop')
+        if st.status != 'running':
+            break
+        await asyncio.sleep(0.05)
+    check('sync 循环协作式停止', st.status == 'stopped', 'status=' + st.status)
+
+    # 14. MAX_SYNC 并发上限
+    r = await cli.post('/api/programs', body={'name': 'synca', 'code': SYNC_LOOP})
+    check('创建 synca', r.status_code == 200)
+    r = await cli.post('/api/programs', body={'name': 'syncb', 'code': SYNC_LOOP})
+    check('创建 syncb', r.status_code == 200)
+    r = await cli.post('/api/programs/synca/start', body={})
+    check('启动 synca', r.status_code == 200)
+    r = await cli.post('/api/programs/syncb/start', body={})
+    check('启动 syncb', r.status_code == 200)
+    r = await cli.post('/api/programs', body={'name': 'syncb2', 'code': SYNC_LOOP})
+    check('创建 sand', r.status_code == 200)
+    r = await cli.post('/api/programs/syncb2/start', body={})
+    check('第三个同步程序被拒(上限2)', r.status_code == 400, (r.text or '')[:120])
+    r = await cli.post('/api/programs/synca/stop', body={})
+    r = await cli.post('/api/programs/syncb/stop', body={})
+    for _ in range(60):
+        a = manager.get_program('synca').status
+        b = manager.get_program('syncb').status
+        if a != 'running' and b != 'running':
+            break
+        await asyncio.sleep(0.05)
+    check('synca/syncb 均已停止', a == 'stopped' and b == 'stopped',
+          'a=%s b=%s' % (a, b))
+
+    # 15. 运行中禁止删除/重命名
+    r = await cli.post('/api/programs', body={'name': 'runningprog', 'code': ASYNC_CODE})
+    check('创建 runningprog', r.status_code == 200)
+    r = await cli.post('/api/programs/runningprog/start', body={})
+    check('启动 runningprog', r.status_code == 200)
+    await asyncio.sleep(0.2)
+    check('runningprog 运行中', manager.is_running('runningprog'))
+    r = await cli.delete('/api/programs/runningprog')
+    check('运行中删除被拒', r.status_code == 400)
+    r = await cli.post('/api/programs/runningprog/rename', body={'name': 'rp2'})
+    check('运行中重命名被拒', r.status_code == 400)
+    r = await cli.post('/api/programs/runningprog/stop', body={})
+    for _ in range(60):
+        st = manager.get_program('runningprog')
+        if st.status != 'running':
+            break
+        await asyncio.sleep(0.05)
+    r = await cli.delete('/api/programs/runningprog')
+    check('停止后删除成功', r.status_code == 200)
+
+    # 16. 静态文件路径穿越拒绝
+    r = await cli.get('/../etc/passwd')
+    check('GET /../ 被拒', r.status_code == 404)
+    r = await cli.get('/%2e%2e%2fconfig.json')
+    check('GET 编码穿越被拒', r.status_code == 404)
+
+    # 17. WebSocket Hub：历史回放 + 清空 + ping 应答（不依赖真实 socket）
+    class FakeWS:
+        def __init__(self):
+            self.sent = []
+            self.closed = False
+
+        async def send(self, payload):
+            self.sent.append(payload)
+
+        async def receive(self):
+            await asyncio.sleep(30)
+            return None
+
+        async def close(self):
+            self.closed = True
+
+        def _handle(self, ws, client, msg):
+            return hub._handle(ws, client, msg)
+
+    con._push('ws-history-line')
+    fws = FakeWS()
+    client = hub.register(fws)
+    check('注册时回放历史', any('ws-history-line' in s for s in fws.sent) or
+          any('ws-history-line' in s for s in client['queue']))
+    hub._handle(fws, client, json.dumps({'type': 'clear'}))
+    check('clear 后控制台清空', 'cleared' in client['queue'][-1])
+    hub._handle(fws, client, json.dumps({'type': 'ping'}))
+    check('ping 收到 pong', json.loads(client['queue'][-1]).get('type') == 'pong')
+
+    # 18. 登出后 token 失效（在密码保护开启时）
+    config.save({'wifi': {'ssid': '', 'password': ''},
+                 'ap': {'ssid': 'T', 'password': ''},
+                 'auth': {'enabled': True, 'password': 'secret'},
+                 'autostart': []})
+    r = await cli.post('/api/login', body={'password': 'secret'})
+    check('B18 登录成功', r.status_code == 200 and r.json.get('token'))
+    token2 = r.json['token']
+    r = await cli.get('/api/programs', headers={'X-Auth-Token': token2})
+    check('B18 带 token 可访问', r.status_code == 200)
+    r = await cli.post('/api/logout', body={})
+    check('B18 登出成功', r.status_code == 200)
+    r = await cli.get('/api/programs', headers={'X-Auth-Token': token2})
+    check('B18 登出后 token 失效', r.status_code == 401)
+    config.save({'wifi': {'ssid': '', 'password': ''},
+                 'ap': {'ssid': 'T', 'password': ''},
+                 'auth': {'enabled': False, 'password': ''},
+                 'autostart': []})
 
     print('---')
     print('passed=%d failed=%d' % (passed, failed))

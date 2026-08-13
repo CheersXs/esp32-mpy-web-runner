@@ -74,6 +74,14 @@ def _now_ms():
     return int(time.time() * 1000)
 
 
+async def _sleep_ms(ms):
+    """兼容 MicroPython(uasyncio.sleep_ms) 与 CPython(asyncio.sleep)。"""
+    if hasattr(asyncio, 'sleep_ms'):
+        await asyncio.sleep_ms(ms)
+    else:
+        await asyncio.sleep(ms / 1000.0)
+
+
 def _load_cfg():
     return config.load()
 
