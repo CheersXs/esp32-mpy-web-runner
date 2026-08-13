@@ -16,6 +16,8 @@
 
 ## 文件结构
 
+> 仓库根目录另有 `.gitignore`（忽略 `__pycache__/`、`*.pyc`、`*.tmp`、`*.log`）。
+
 ```
 esp32-web-runner/
 ├── boot.py                # 开机初始化（加载路径）
@@ -57,7 +59,7 @@ esp32-web-runner/
    脚本会建立目录、上传所有文件、把根目录旧的 `led.py` 挪进 `programs/`（这样它
    也变成网页里可管理的程序），然后软复位板子。
 
-   > 不想动 `led.py` 的话：`python tools/upload.py --no-examples`
+   > 不想上传示例程序的话：`python tools/upload.py --no-examples`
 
 3. 上电后，打开浏览器：
 
