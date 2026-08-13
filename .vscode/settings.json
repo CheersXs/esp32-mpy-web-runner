@@ -19,9 +19,6 @@
     ],
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
-    "python.autoComplete.extraPaths": [
-        "c:/Users/user/.vscode/extensions/rt-thread.rt-thread-micropython-1.0.11/microExamples/code-completion"
-    ],
     "files.associations": {
         ".mpyproject.json": "jsonc"
     }

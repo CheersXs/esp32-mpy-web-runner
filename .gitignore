@@ -5,3 +5,7 @@ __pycache__/
 # 临时文件
 *.tmp
 *.log
+
+# 板子运行时生成的配置（含本人 WiFi 密码，勿提交）
+config.json
+esp32-web-runner/config.json

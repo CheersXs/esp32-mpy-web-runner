@@ -49,19 +49,23 @@ esp32-web-runner/
    pip install mpremote
    ```
 
-2. 用 USB 线把 ESP32-S3 接到电脑，然后在项目目录执行：
+2. 烧录固件（如果板子还没装 MicroPython）：
+
+   仓库根目录的 `ESP32_GENERIC_S3-SPIRAM_OCT-20260406-v1.28.0.bin` 是
+   ESP32-S3 Octal-SPIRAM (N16R8) 用的 MicroPython v1.28.0 固件，可用 esptool 烧入。
+
+3. 用 USB 线把 ESP32-S3 接到电脑，然后在项目目录执行：
 
    ```
    python tools/upload.py            # 自动找串口
    python tools/upload.py --port COM7   # 或指定串口
    ```
 
-   脚本会建立目录、上传所有文件、把根目录旧的 `led.py` 挪进 `programs/`（这样它
-   也变成网页里可管理的程序），然后软复位板子。
+   脚本会建立目录、上传所有文件（含 `programs/examples/` 里的示例程序），然后软复位板子。
 
    > 不想上传示例程序的话：`python tools/upload.py --no-examples`
 
-3. 上电后，打开浏览器：
+4. 上电后，打开浏览器：
 
    - 板子开了热点 `ESP32-S3`：连上后访问 `http://192.168.4.1`
    - 连上家里路由器：`http://<板子IP>`（在网页控制台/串口能看到）
