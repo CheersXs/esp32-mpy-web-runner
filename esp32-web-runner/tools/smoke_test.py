@@ -137,6 +137,31 @@ async def main():
         await asyncio.sleep(0.05)
     check('blink 已停止', st.status == 'stopped', 'status=' + st.status)
 
+    # 5b. 保存并重启（运行中程序）：先停止 → 保存 → 启动
+    r = await cli.post('/api/programs/blink/start', body={})
+    check('重启前启动 blink', r.status_code == 200)
+    await asyncio.sleep(0.2)
+    check('blink 运行中', manager.is_running('blink'))
+    new_code = ASYNC_CODE + '# edited\n'
+    r = await cli.post('/api/programs/blink/restart', body={'code': new_code})
+    check('保存并重启 blink', r.status_code == 200, (r.text or '')[:120])
+    for _ in range(60):
+        st = manager.get_program('blink')
+        if st.status == 'running':
+            break
+        await asyncio.sleep(0.05)
+    check('blink 重启后运行中', st.status == 'running', 'status=' + st.status)
+    r = await cli.get('/api/programs/blink')
+    check('重启后代码已保存', r.json.get('code') == new_code)
+    r = await cli.post('/api/programs/blink/stop', body={})
+    check('停止 blink', r.status_code == 200)
+    for _ in range(60):
+        st = manager.get_program('blink')
+        if st.status != 'running':
+            break
+        await asyncio.sleep(0.05)
+    check('blink 已停止', st.status == 'stopped', 'status=' + st.status)
+
     # 6. PUT 保存 / 重命名 / 删除
     r = await cli.put('/api/programs/hello', body={'code': SYNC_CODE + '# edited\n'})
     check('PUT 保存', r.status_code == 200)

@@ -309,8 +309,10 @@ def create_app(manager, hub):
     @app.post('/api/programs/<name>/restart')
     @authed
     async def api_restart(request, name):
+        body = request.json or {}
+        code = body.get('code')
         try:
-            p = await manager.restart(name)
+            p = await manager.restart(name, code)
             return {'ok': True, 'message': '已重启 %s' % name, 'type': p.type}
         except (RuntimeError, OSError) as e:
             return _json_error(str(e))

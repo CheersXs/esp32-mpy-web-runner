@@ -171,20 +171,27 @@
   function saveProgram(andRun) {
     if (!state.current) return Promise.resolve();
     var body = { code: editor.getValue() };
-    var method = 'PUT';
     var p = byName(state.current);
     if (andRun && p && p.status === 'running') {
       if (!confirm('保存并重启正在运行的程序？')) return Promise.resolve();
     }
-    api('/api/programs/' + encodeURIComponent(state.current), { method: method, body: body })
+    if (andRun) {
+      // 保存并重启：后端会先停止（若在运行）→ 保存 → 启动
+      return api('/api/programs/' + encodeURIComponent(state.current) + '/restart',
+        { method: 'POST', body: body })
+        .then(function () {
+          state.dirty = false;
+          toast('已保存并重启 ' + state.current, 'ok');
+          refreshPrograms();
+        })
+        .catch(function (err) { toast(err.message, 'error'); });
+    }
+    // 普通保存
+    return api('/api/programs/' + encodeURIComponent(state.current), { method: 'PUT', body: body })
       .then(function () {
         state.dirty = false;
         toast('已保存 ' + state.current, 'ok');
-        if (andRun) return doAction(state.current, 'restart');
-      })
-      .then(function () {
-        if (andRun) refreshPrograms();
-        else updateTitle();
+        updateTitle();
       })
       .catch(function (err) { toast(err.message, 'error'); });
   }

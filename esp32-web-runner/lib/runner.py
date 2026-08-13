@@ -26,6 +26,14 @@ except ImportError:
     _thread = None
 
 
+async def _sleep_ms(ms):
+    """兼容 MicroPython(uasyncio.sleep_ms) 与 CPython(asyncio.sleep)。"""
+    if hasattr(asyncio, 'sleep_ms'):
+        await asyncio.sleep_ms(ms)
+    else:
+        await asyncio.sleep(ms / 1000.0)
+
+
 class Program:
     def __init__(self, name):
         self.name = name
@@ -273,25 +281,72 @@ class Manager:
         if p.status == 'stopped' and p.task is None:
             raise RuntimeError('程序没有在运行')
         if p.task is not None:
-            p.task.cancel()
+            task = p.task
+            try:
+                if task.done():
+                    # 任务已结束但状态未清理（协程体未执行就被取消等），手动收尾
+                    p.task = None
+                    p.status = 'stopped'
+                    raise RuntimeError('程序没有在运行')
+            except RuntimeError:
+                raise
+            except Exception:
+                pass
+            try:
+                task.cancel()
+            except Exception:
+                task = None
             uvm._set_stop(name, True)
+            if task is not None:
+                # cancel 一个尚未开始运行(pending)的任务时，协程体不会执行，
+                # _run_async 的 finally 也就不会清理状态，任务会在事件循环
+                # 下一 tick 变成 done。这里注册一个回调及时收尾，避免
+                # status 卡在 running / task 指向已取消任务。
+                def _finalize_cancelled(t=task):
+                    try:
+                        if t.done():
+                            cur = self.programs.get(name)
+                            if cur is not None and cur.task is t:
+                                cur.task = None
+                                if cur.status == 'running':
+                                    cur.status = 'stopped'
+                    except Exception:
+                        pass
+                try:
+                    asyncio.get_event_loop().call_soon(_finalize_cancelled)
+                except Exception:
+                    _finalize_cancelled()
             self._announce('[%s] 发送停止信号...' % name)
         else:
             uvm._set_stop(name, True)
             self._announce('[%s] 请求停止 (等待程序响应)' % name)
 
-    async def restart(self, name):
+    async def restart(self, name, code=None):
+        """重启程序；若传入 code 则先保存再启动（用于"保存并重启"）。"""
         try:
             self.stop(name)
         except RuntimeError:
             pass
         # 轮询等待程序真正停止（异步任务取消后 finally 才置 stopped），
         # 避免固定延时不够导致 start() 报"程序已在运行"。
+        #
+        # 注意：若任务在 pending（尚未开始执行）时被 cancel，协程体不会运行，
+        # _run_async 的 finally 也不会清理状态，任务会直接变成 done。
+        # 此时需手动收尾，否则 status 会一直卡在 running。
         for _ in range(50):
             p = self.get_program(name)
+            if p.task is not None:
+                try:
+                    if p.task.done():
+                        p.task = None
+                        p.status = 'stopped'
+                except Exception:
+                    pass
             if p.status == 'stopped' and p.task is None:
                 break
-            await asyncio.sleep_ms(50)
+            await _sleep_ms(50)
+        if code is not None:
+            self.save_code(name, code)
         return self.start(name)
 
     # ---------- 状态 ----------
