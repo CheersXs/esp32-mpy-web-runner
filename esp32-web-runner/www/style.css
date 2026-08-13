@@ -1,0 +1,162 @@
+:root {
+  --bg: #12151c;
+  --bg2: #1a1e27;
+  --bg3: #232836;
+  --fg: #d7dce3;
+  --muted: #7d8496;
+  --accent: #3f8cff;
+  --accent2: #6c5ce7;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --amber: #f39c12;
+  --border: #2c3242;
+  --code: #0d1017;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.5 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* ---------- 顶栏 ---------- */
+#topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.logo { color: var(--accent); }
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.badge {
+  background: var(--bg3); border: 1px solid var(--border);
+  padding: 2px 10px; border-radius: 12px; font-size: 12px; color: var(--muted);
+}
+.badge.on { color: var(--green); border-color: var(--green); }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  border: 1px solid var(--border); background: var(--bg3); color: var(--fg);
+  padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+  transition: filter .15s;
+}
+.btn:hover { filter: brightness(1.15); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.accent { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+.btn.success { background: var(--green); border-color: var(--green); color: #07140b; }
+.btn.danger { background: var(--red); border-color: var(--red); color: #fff; }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 2px 8px; font-size: 12px; }
+.danger-text { color: var(--red); }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+
+/* ---------- 主区 ---------- */
+#main { display: flex; flex: 1; min-height: 0; }
+
+#sidebar {
+  width: 240px; min-width: 240px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+#side-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px; border-bottom: 1px solid var(--border); font-weight: 600;
+}
+#program-list { list-style: none; overflow-y: auto; flex: 1; }
+#program-list li {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 10px; cursor: pointer; border-bottom: 1px solid #20242f;
+}
+#program-list li:hover { background: var(--bg3); }
+#program-list li.active { background: var(--bg3); border-left: 3px solid var(--accent); }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: #555; min-width: 10px; }
+.status-dot.stopped { background: #555; }
+.status-dot.running { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.error { background: var(--red); }
+.pname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.type-tag { font-size: 10px; color: var(--muted); }
+.plist-btn {
+  border: none; background: transparent; color: var(--muted);
+  cursor: pointer; font-size: 14px; padding: 2px 4px;
+}
+.plist-btn:hover { color: var(--fg); }
+#side-foot { padding: 8px 10px; font-size: 11px; }
+
+/* ---------- 编辑器 ---------- */
+#editor-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#editor-tabs {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 12px; border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.editor-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+#editor { flex: 1; min-height: 0; background: var(--code); }
+#editor .CodeMirror { height: 100%; font-family: "Cascadia Code", Consolas, monospace; }
+#status-strip {
+  padding: 4px 12px; font-size: 12px;
+  display: flex; justify-content: space-between;
+  border-top: 1px solid var(--border); background: var(--bg2);
+}
+
+/* ---------- 控制台 ---------- */
+#console-panel {
+  height: 210px; min-height: 120px; display: flex; flex-direction: column;
+  border-top: 1px solid var(--border); background: var(--bg2);
+}
+#console-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 12px; font-weight: 600;
+}
+#console {
+  flex: 1; overflow-y: auto; padding: 6px 12px;
+  background: var(--code); font-family: Consolas, monospace; font-size: 12px;
+  white-space: pre-wrap; word-break: break-all;
+  border-top: 1px solid var(--border);
+}
+#console .c-line { color: var(--fg); }
+#console .c-err { color: var(--red); }
+#console .c-ok { color: var(--green); }
+#console .c-ev { color: var(--accent2); }
+
+/* ---------- 弹窗 ---------- */
+.modal {
+  position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center; z-index: 50;
+}
+.modal-box {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 10px; width: 380px; max-width: 92vw; padding: 18px;
+}
+.modal-box.wide { width: 520px; }
+.modal-box h3 { margin-bottom: 12px; }
+.modal-body { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.modal-body input[type=text],
+.modal-body input[type=password] {
+  background: var(--code); border: 1px solid var(--border); color: var(--fg);
+  padding: 8px 10px; border-radius: 6px; width: 100%; outline: none;
+}
+.modal-body input:focus { border-color: var(--accent); }
+.radio-row { display: flex; align-items: center; gap: 6px; font-weight: normal; }
+fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 6px; }
+legend { padding: 0 6px; color: var(--muted); font-size: 12px; }
+fieldset label { font-size: 12px; color: var(--muted); margin-top: 6px; display: block; }
+#cfg-autostart-wrap .chk { display: flex; align-items: center; gap: 6px; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
+
+/* ---------- 提示 ---------- */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--bg3); border: 1px solid var(--accent);
+  padding: 8px 18px; border-radius: 8px; z-index: 99; color: var(--fg);
+  box-shadow: 0 4px 18px rgba(0,0,0,.4);
+}
+.toast.error { border-color: var(--red); }
+.toast.ok { border-color: var(--green); }

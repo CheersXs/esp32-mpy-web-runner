@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP32 Web Runner</title>
+<link rel="stylesheet" href="/cm/codemirror.min.css">
+<link rel="stylesheet" href="/cm/show-hint.min.css">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <div class="brand">
+      <span class="logo">⚡</span>
+      <span id="title">ESP32 Web Runner</span>
+    </div>
+    <div class="top-actions">
+      <span id="ip-badge" class="badge" title="访问地址">…</span>
+      <button id="btn-settings" class="btn ghost" title="设置">⚙ 设置</button>
+      <button id="btn-login" class="btn ghost hidden">登录</button>
+      <button id="btn-reboot" class="btn ghost" title="重启板子">↻ 重启</button>
+    </div>
+  </header>
+
+  <section id="main">
+    <aside id="sidebar">
+      <div id="side-head">
+        <span>程序</span>
+        <button id="btn-new" class="btn primary small" title="新建程序">＋ 新建</button>
+      </div>
+      <ul id="program-list"></ul>
+      <div id="side-foot" class="muted">类型: <code>#type:async</code> 异步 / <code>#type:sync</code> 同步</div>
+    </aside>
+
+    <div id="editor-wrap">
+      <div id="editor-tabs">
+        <span id="current-file" class="muted">未选择程序</span>
+        <div class="editor-actions">
+          <button id="btn-start" class="btn success" title="启动">▶ 启动</button>
+          <button id="btn-stop" class="btn danger" title="停止">■ 停止</button>
+          <button id="btn-save" class="btn primary" title="保存 (Ctrl+S)">💾 保存</button>
+          <button id="btn-save-run" class="btn accent" title="保存并重启">保存＋重启</button>
+          <button id="btn-rename" class="btn ghost" title="重命名">✎ 重命名</button>
+          <button id="btn-duplicate" class="btn ghost" title="复制为新程序">⧉ 复制</button>
+          <button id="btn-download" class="btn ghost" title="下载到电脑">⬇</button>
+          <button id="btn-delete" class="btn ghost danger-text" title="删除">🗑</button>
+        </div>
+      </div>
+      <div id="editor"></div>
+      <div id="status-strip">
+        <span id="status-text" class="muted">就绪</span>
+        <span id="sys-info" class="muted"></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="console-panel">
+    <div id="console-head">
+      <span>📟 实时控制台</span>
+      <div>
+        <label class="muted"><input type="checkbox" id="console-follow" checked> 自动滚动</label>
+        <button id="btn-clear-console" class="btn ghost small">清空</button>
+      </div>
+    </div>
+    <pre id="console"></pre>
+  </section>
+
+</div>
+
+<!-- 新建/重命名 弹窗 -->
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <h3 id="modal-title">新建程序</h3>
+    <div class="modal-body">
+      <label>程序名（字母/数字/下划线）</label>
+      <input id="modal-input" type="text" placeholder="如 blink">
+      <label class="radio-row">
+        <input type="radio" name="tmpl" value="async" checked> 异步程序（可随时停止，需 async def main()）
+      </label>
+      <label class="radio-row">
+        <input type="radio" name="tmpl" value="sync"> 同步脚本（线程运行，跑完即止）
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button id="modal-cancel" class="btn ghost">取消</button>
+      <button id="modal-ok" class="btn primary">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 登录弹窗 -->
+<div id="login-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>需要登录</h3>
+    <div class="modal-body">
+      <label>访问密码</label>
+      <input id="login-input" type="password" placeholder="密码">
+    </div>
+    <div class="modal-foot">
+      <button id="login-cancel" class="btn ghost">取消</button>
+      <button id="login-ok" class="btn primary">登录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 设置弹窗 -->
+<div id="settings-modal" class="modal hidden">
+  <div class="modal-box wide">
+    <h3>设置</h3>
+    <div class="modal-body">
+      <fieldset>
+        <legend>WiFi（STA，连你家路由器）</legend>
+        <label>SSID</label>
+        <input id="cfg-sta-ssid" type="text" placeholder="路由器名称">
+        <label>密码（留空保持原密码不变）</label>
+        <input id="cfg-sta-pass" type="password" placeholder="••••••">
+      </fieldset>
+      <fieldset>
+        <legend>热点（AP，板上自建）</legend>
+        <label>热点名</label>
+        <input id="cfg-ap-ssid" type="text">
+        <label>热点密码（留空 = 开放热点）</label>
+        <input id="cfg-ap-pass" type="password">
+      </fieldset>
+      <fieldset>
+        <legend>访问密码保护</legend>
+        <label class="radio-row"><input id="cfg-auth-enabled" type="checkbox"> 启用访问密码</label>
+        <input id="cfg-auth-pass" type="password" placeholder="新密码（留空则不改）">
+      </fieldset>
+      <fieldset id="cfg-autostart-wrap">
+        <legend>开机自启动程序</legend>
+      </fieldset>
+    </div>
+    <div class="modal-foot">
+      <span id="settings-msg" class="muted"></span>
+      <button id="settings-cancel" class="btn ghost">取消</button>
+      <button id="settings-save" class="btn primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<input type="file" id="file-upload" accept=".py,.txt" class="hidden">
+
+<script src="/cm/codemirror.min.js"></script>
+<script src="/cm/python.min.js"></script>
+<script src="/cm/closebrackets.min.js"></script>
+<script src="/cm/show-hint.min.js"></script>
+<script src="/cm/anyword-hint.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
