@@ -9,7 +9,8 @@ STA_TIMEOUT_MS = 15000
 
 
 def _ap_enabled(cfg):
-    return True
+    """AP 是否启用（C3 等内存紧张设备可关闭，纯 STA）。"""
+    return bool((cfg.get('ap', {}) or {}).get('enabled', True))
 
 
 def _apply_ap(cfg):
@@ -71,13 +72,16 @@ def setup_network(cfg, console=None):
     if network is None:
         return result
 
-    _apply_ap(cfg)
-    try:
-        ap = network.WLAN(network.AP_IF)
-        result['ap_ip'] = ap.ifconfig()[0]
-    except Exception:
-        result['ap_ip'] = '192.168.4.1'
-    result['ap'] = network.WLAN(network.AP_IF)
+    if _ap_enabled(cfg):
+        _apply_ap(cfg)
+        try:
+            ap = network.WLAN(network.AP_IF)
+            result['ap_ip'] = ap.ifconfig()[0]
+        except Exception:
+            result['ap_ip'] = '192.168.4.1'
+        result['ap'] = network.WLAN(network.AP_IF)
+    else:
+        result['ap'] = None
     result['sta'] = network.WLAN(network.STA_IF)
 
     wf = cfg.get('wifi', {}) or {}
@@ -121,7 +125,8 @@ def _do_reconfigure(console):
         if console:
             console.flush()
             console._push('[net] applying new network config...')
-        _apply_ap(cfg)
+        if _ap_enabled(cfg):
+            _apply_ap(cfg)
         _connect_sta(cfg, console)
     except Exception as e:
         if console:

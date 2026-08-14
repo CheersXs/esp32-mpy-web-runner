@@ -329,7 +329,9 @@
       var host = location.hostname;
       var badge = $('ip-badge');
       badge.className = 'badge ' + (host === ip.sta_ip ? 'on' : '');
-      badge.textContent = ip.sta_connected ? ('STA ' + ip.sta_ip) : ('AP ' + ip.ap_ip);
+      if (ip.sta_connected) badge.textContent = 'STA ' + ip.sta_ip;
+      else if (ip.ap_ip) badge.textContent = 'AP ' + ip.ap_ip;
+      else badge.textContent = '未连接';
 
       var mem = state.sys ? (state.sys.mem_free / 1024) : 0;
       var fs = state.sys && state.sys.filesystem ? state.sys.filesystem.free / 1024 / 1024 : 0;
@@ -348,6 +350,9 @@
       $('cfg-sta-pass').value = '';
       $('cfg-ap-ssid').value = cfg.ap.ssid || '';
       $('cfg-ap-pass').value = '';
+      // AP 被禁用（如 C3 纯 STA 模式）时隐藏整个热点设置区块
+      var apWrap = $('cfg-ap-wrap');
+      if (apWrap) apWrap.style.display = (cfg.ap && cfg.ap.enabled === false) ? 'none' : '';
       $('cfg-auth-enabled').checked = !!cfg.auth.enabled;
       $('cfg-auth-pass').value = '';
       showWifiStatus();
@@ -415,6 +420,9 @@
       auth: { enabled: $('cfg-auth-enabled').checked, password: $('cfg-auth-pass').value },
       autostart: autostart,
     };
+    // 若 AP 区块被隐藏（C3 纯 STA），不提交 AP 修改，保持 ap.enabled=false
+    var apWrap = $('cfg-ap-wrap');
+    if (apWrap && apWrap.style.display === 'none') delete body.ap;
     api('/api/config', { method: 'POST', body: body }).then(function (data) {
       $('settings-msg').textContent = data.message + '；若改了 WiFi，板子将在后台重连。';
       toast('设置已保存', 'ok');

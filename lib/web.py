@@ -338,7 +338,8 @@ def create_app(manager, hub):
         cfg = _load_cfg()
         return {
             'wifi': {'ssid': cfg['wifi'].get('ssid', '')},
-            'ap': {'ssid': cfg['ap'].get('ssid', '')},
+            'ap': {'enabled': bool(cfg['ap'].get('enabled', True)),
+                   'ssid': cfg['ap'].get('ssid', '')},
             'auth': {'enabled': bool(cfg['auth'].get('enabled', False))},
             'autostart': list(cfg.get('autostart', [])),
         }
@@ -356,6 +357,8 @@ def create_app(manager, hub):
                 cfg['wifi']['password'] = w['password']
         if 'ap' in body and isinstance(body['ap'], dict):
             a = body['ap']
+            if 'enabled' in a:
+                cfg['ap']['enabled'] = bool(a['enabled'])
             if isinstance(a.get('ssid'), str) and a['ssid'] != '':
                 cfg['ap']['ssid'] = a['ssid']
             if isinstance(a.get('password'), str) and a['password'] != '':
@@ -492,7 +495,7 @@ def _new_token():
 class Hub:
     """把控制台日志广播给所有已连接的 WebSocket 客户端。"""
 
-    MAX_QUEUE = 2000
+    MAX_QUEUE = config.hub_max_queue()
 
     def __init__(self, console):
         self.console = console

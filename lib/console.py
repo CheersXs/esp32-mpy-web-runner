@@ -10,7 +10,9 @@ try:
 except ImportError:
     os = None
 
-MAX_LINES = 500
+import config
+
+MAX_LINES = config.console_max_lines()
 
 
 class Console(io.IOBase if (io and hasattr(io, 'IOBase')) else object):
