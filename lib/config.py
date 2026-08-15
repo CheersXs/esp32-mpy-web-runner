@@ -1,6 +1,8 @@
 import json
 import os
 
+VERSION = '2.0.0'
+
 CONFIG_PATH = '/config.json'
 
 DEFAULT_CONFIG = {

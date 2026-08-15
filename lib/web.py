@@ -174,6 +174,7 @@ def _sys_info():
         'filesystem': fs,
         'net': net,
         'version': sys.version,
+        'app_version': config.VERSION,
     }
 
 

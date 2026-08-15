@@ -406,7 +406,7 @@ def run(sta):
         pass
 
     con = console.get_console().attach()
-    con._push('== ESP32-C3 Web Runner ==')
+    con._push('== ESP32-C3 Web Runner v%s ==' % config.VERSION)
     con._push(' mem %dK, wifi %s' % (gc.mem_free() // 1024, cfg.WIFI_SSID))
 
     OLED = _oled_init()

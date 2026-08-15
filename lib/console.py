@@ -18,7 +18,8 @@ MAX_LINES = config.console_max_lines()
 # （headless 使用，比如只插 USB 供电后直接 curl 测试），FIFO 一旦写满，
 # sys.stdout.write() 会永久阻塞，而 MicroPython 单线程 —— 事件循环随之停摆，
 # 入站连接全废（出站也废）。这是 S3(全速 USB 大缓冲) 能跑、C3 跑不起来的根因。
-# 对策：C3 上串口日志设严格字节预算，预算耗尽后只进网页控制台，绝不阻塞主循环。
+# 对策：仅 C3 上串口日志设严格字节预算，预算耗尽后只进网页控制台，绝不阻塞
+# 主循环；S3 串口缓冲充足，不做限制（保持完整串口日志）。
 _MP_SERIAL_BUDGET = 192
 
 
@@ -46,7 +47,7 @@ class Console(io.IOBase if (io and hasattr(io, 'IOBase')) else object):
         self._mirror = None
         self._serial = None
         self._orig_print = None
-        self._serial_budget = _MP_SERIAL_BUDGET if _on_mp() else None
+        self._serial_budget = _MP_SERIAL_BUDGET if (_on_mp() and config.is_c3()) else None
         try:
             self._serial = sys.stdout
         except Exception:

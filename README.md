@@ -5,8 +5,8 @@
 **ESP32 MPY Web Runner** 是一个运行在 ESP32 上的轻量级 Web IDE，让你通过浏览器编写、运行、管理
 多个 MicroPython 程序，无需安装任何 PC 软件，插电即用。
 
-支持 **ESP32-S3** 与 **ESP32-C3** 双目标，共享同一套 `lib/`、`www/`、`programs/` 代码，
-通过 `targets/` 目录做板级差异化。
+支持 **ESP32-S3** 与 **ESP32-C3** 双目标，共享同一套 `lib/`、`programs/` 代码，通过
+`targets/` 目录做板级差异化（C3 使用自己的内联单连接页面，见移植指南）。
 
 ## 支持的目标板
 
@@ -32,8 +32,21 @@
   - S3：AP+STA 双模式（有路由器连路由器，没有就自建热点 `ESP32-S3`，访问 `192.168.4.1`）
   - C3：纯 STA 模式，通过路由器访问，OLED 显示 IP
 - ⚙️ **设置**：网页里配置 WiFi / 热点 / 可选访问密码 / 开机自启动
-- 🛡 **看门狗**：程序把系统锁死时自动重启恢复
+- 🛡 **看门狗**：程序把系统锁死时自动重启恢复（S3；C3 为调试便利已移除，见移植指南）
 - 🧠 **芯片自适应**：运行时自动检测芯片型号，S3 保持高性能（500 行日志 / 2000 队列），C3 自动降级（150 行 / 300 队列）省内存
+
+## 运行效果
+
+### ESP32-S3（rgb led控制演示）
+![ESP32-S3 rgbled 显示](docs/images/esp32s3_rgbled_demo.gif)
+
+### ESP32-C3（OLED 状态屏控制演示）
+![ESP32-C3 OLED 显示](docs/images/esp32c3_oled_demo.gif)
+
+### ESP32-S3（CodeMirror 网页 IDE）
+![ESP32-S3 网页 IDE](docs/images/web.jpg)
+
+
 
 ## 文件结构
 
@@ -47,7 +60,7 @@
 │   ├── web.py                  # microdot 路由 / REST API / WebSocket
 │   ├── ssd1306.py              # OLED 驱动（C3 用）
 │   └── microdot/               # 第三方零依赖 web 框架
-├── www/                        # 网页前端（存 flash，S3/C3 通用）
+├── www/                        # 网页前端多文件版（S3 用，存 flash）
 │   ├── index.html
 │   ├── app.js
 │   ├── style.css
@@ -59,13 +72,18 @@
 │   │   ├── main.py
 │   │   └── boot.py
 │   └── esp32c3/                # ESP32-C3 目标
-│       ├── main.py             # 完整 Web IDE + 纯 STA + OLED 状态屏
+│       ├── main.py             # 薄壳引导（连 WiFi → 固定顺序导入 → c3_app）
+│       ├── c3_app.py           # 应用逻辑（OLED / STA 维护 / Web 启动）
 │       ├── boot.py
 │       ├── c3_config.py        # C3 配置（WiFi / OLED 引脚 / 端口）
+│       ├── www/index.html      # C3 内联单连接页面（build_inline.py 生成）
 │       └── examples/
 │           └── oled_loop.py    # C3 专属 OLED 示例
+├── docs/
+│   └── C3_PORTING_GUIDE.md     # C3 适配技术说明（内存根因与模块加载顺序）
 └── tools/
     ├── upload.py               # 一键上传（--target 选择目标板）
+    ├── build_inline.py         # 生成 C3 内联单连接页面
     └── smoke_test.py           # PC 端冒烟测试（无需板子）
 ```
 
@@ -119,11 +137,12 @@ python tools/upload.py --target esp32c3
 ```
 
 > 上传脚本会自动：
-> - 上传共享的 `lib/`、`www/`、`programs/` 到板子
+> - 上传共享的 `lib/`、`programs/` 到板子
 > - 按目标裁剪 microdot（C3 不传 cors/test_client，省 flash）
 > - 上传对应 `targets/<目标>/` 下的 `main.py` / `boot.py`
 > - 预置 `config.json`（C3 自动写入 `ap.enabled=false` 并预填 WiFi）
-> - C3 额外上传 `c3_config.py` 和专属示例程序
+> - C3 额外上传 `c3_config.py`、专属示例程序和**内联单连接页面**
+>   （`www/` 只传 `index.html`，跳过 `app.js`/`style.css`/`cm`，省 flash 且浏览器只发 1 个请求）
 
 ### 4. 访问
 
@@ -156,7 +175,7 @@ C3 的 OLED 实时显示：
   - 否则代码里含 `async def main` 自动视为异步，其余按同步处理。
   - 异步程序 = asyncio 任务，网页点"停止"能立刻停。
   - 同步脚本 = 独立线程跑，网页点"停止"是协作式信号（脚本循环里读 `uvm.should_stop()`）。
-    顽固死循环没法硬杀，靠看门狗；同步程序并发最多 2 个。
+    顽固死循环没法硬杀，S3 靠看门狗兜底，C3 需断电重启；同步程序并发最多 2 个。
 - **程序里能 import 什么**：`uvm`（辅助库）。长循环见
   ```
   import uvm
@@ -171,7 +190,7 @@ C3 的 OLED 实时显示：
 
 | 现象 | 处理 |
 |---|---|
-| 上传慢 | CodeMirror 文件较大（约 170KB），首次上传要半分钟左右，属正常 |
+| 上传慢（S3） | CodeMirror 文件较大（约 170KB），首次上传要半分钟左右，属正常；C3 用内联页面，上传很快 |
 | 首页白屏 | 先开 WebSocket 日志观察；确保上传完整后按 EN 重启 |
 |上传完没反应| 尝试重启板子或者彻底断电后重启然后等待一会
 | 改完 WiFi 后连不上 | 网页设置保存即生效；改错 SSID 会重连失败，S3 仍可用热点入口修复，C3 需重新上传配置 |
@@ -183,7 +202,7 @@ C3 的 OLED 实时显示：
 
 - 浏览器必须与板子在同一局域网（或连它的热点）。
 - 程序运行在同一个 Python 解释器里：**阻塞型死循环**（无任何 `await`/`sleep`）会拖垮整个
-  系统，看门狗会重启兜底——所以长任务请写成异步或至少带上 `uvm.sleep_ms`。
+  系统，S3 靠看门狗重启兜底，C3 需断电重启——所以长任务请写成异步或至少带上 `uvm.sleep_ms`。
 - 控制台是共享日志流（所有程序 + 系统日志混在一起），未按程序分组。
 - **C3 内存提示**：C3 只有 400KB SRAM，建议程序源码 < 10KB，多写异步程序（`async def main`）。
 

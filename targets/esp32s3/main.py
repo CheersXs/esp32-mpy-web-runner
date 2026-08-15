@@ -45,7 +45,7 @@ def main():
     cfg = config.load()
 
     con._push('*' * 46)
-    con._push(' ESP32 Web Runner 启动中...')
+    con._push(' ESP32 Web Runner v%s 启动中...' % config.VERSION)
     con._push('*' * 46)
 
     netinfo = net.setup_network(cfg, con)
