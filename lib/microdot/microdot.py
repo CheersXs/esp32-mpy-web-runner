@@ -564,7 +564,7 @@ class Response:
         'svg': 'image/svg+xml',
     }
 
-    send_file_buffer_size = 1024
+    send_file_buffer_size = 4096
 
     #: The content type to use for responses that do not explicitly define a
     #: ``Content-Type`` header.
@@ -665,6 +665,7 @@ class Response:
     async def write(self, stream):
         self.complete()
 
+        iter = None
         try:
             # status code
             reason = self.reason if self.reason is not None else \
@@ -686,23 +687,20 @@ class Response:
                 async for body in iter:
                     if isinstance(body, str):  # pragma: no cover
                         body = body.encode()
-                    try:
-                        await stream.awrite(body)
-                    except OSError as exc:  # pragma: no cover
-                        if exc.errno in MUTED_SOCKET_ERRORS or \
-                                exc.args[0] == 'Connection lost':
-                            if hasattr(iter, 'aclose'):
-                                await iter.aclose()
-                        raise
-                if hasattr(iter, 'aclose'):  # pragma: no branch
-                    await iter.aclose()
+                    await stream.awrite(body)
 
         except OSError as exc:  # pragma: no cover
-            if exc.errno in MUTED_SOCKET_ERRORS or \
-                    exc.args[0] == 'Connection lost':
-                pass
-            else:
+            if exc.errno not in MUTED_SOCKET_ERRORS and \
+                    exc.args[0] != 'Connection lost':
                 raise
+        finally:
+            # 无论传输成功还是中断，都关闭 body（文件对象），避免句柄泄漏
+            # 耗尽 C3 的文件描述符表。
+            if iter is not None and hasattr(iter, 'aclose'):
+                try:
+                    await iter.aclose()
+                except Exception:  # pragma: no cover
+                    pass
 
     def body_iter(self):
         if hasattr(self.body, '__anext__'):
@@ -1411,12 +1409,13 @@ class Microdot:
         try:
             if res != Response.already_handled:  # pragma: no branch
                 await res.write(writer)
-            await writer.aclose()
-        except OSError as exc:  # pragma: no cover
-            if exc.errno in MUTED_SOCKET_ERRORS:
+        finally:
+            # 无论成功与否都关闭连接，避免 socket 泄漏导致
+            # lwIP TCP 连接池耗尽（表现为新连接握手失败）。
+            try:
+                await writer.aclose()
+            except Exception:  # pragma: no cover
                 pass
-            else:
-                raise
         if self.debug and req:  # pragma: no cover
             print('{method} {path} {status_code}'.format(
                 method=req.method, path=req.path,

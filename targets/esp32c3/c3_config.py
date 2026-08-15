@@ -1,6 +1,6 @@
 # ESP32-C3 POC 配置 —— 只需改这里，不用动任何代码
-WIFI_SSID = "3699963"
-WIFI_PASS = "song3699963liu"
+WIFI_SSID = "you_wifi_ssid"
+WIFI_PASS = "you_wifi_password"
 
 # OLED 0.42" Newvision N042-7240TSWEG01-H16，SSD1306 驱动，72x40
 OLED_WIDTH = 72

@@ -16,7 +16,6 @@ except ImportError:
     import uasyncio as asyncio
 
 from microdot.microdot import Microdot, Response, Request
-from microdot.websocket import with_websocket
 
 import config
 
@@ -431,8 +430,13 @@ def create_app(manager, hub):
     # ---------- WebSocket 实时控制台 ----------
 
     @app.route('/ws')
-    @with_websocket
-    async def ws_route(request, ws):
+    async def ws_route(request):
+        # 延迟 import：microdot.websocket 会引入 hashlib/binascii，
+        # C3 内存紧张，等真有 WebSocket 连接再加载
+        from microdot.websocket import with_websocket
+        return await with_websocket(_ws_impl)(request)
+
+    async def _ws_impl(request, ws):
         if not _ws_authorized(request):
             try:
                 await ws.close()

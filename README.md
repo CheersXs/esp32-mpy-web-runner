@@ -19,6 +19,9 @@
 > 这样省去了 AP + DHCP 服务器的底层内存开销，让 400KB SRAM 的 C3 也能稳定运行完整 Web IDE。
 > 同时 C3 通过 OLED 屏幕实时显示 IP 地址，方便通过浏览器访问。
 
+> ESP32-C3 适配的技术原理与内存约束说明，详见 [docs/C3_PORTING_GUIDE.md](docs/C3_PORTING_GUIDE.md)。
+> （C3 无 PSRAM 的内存架构差异、GC split-heap 根因与模块加载顺序要求）。
+
 ## 功能
 
 - 📁 **程序管理**：列表、新建、删除、重命名、复制、下载、导入（网页里直接传文件）

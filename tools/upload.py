@@ -47,7 +47,7 @@ def run(cmd, port, remote=False):
 
 
 def mkdir(port, path):
-    return run(['fs', 'mkdir', ':', path], port, remote=True)
+    return run(['fs', 'mkdir', path], port, remote=True)
 
 
 def upload_file(port, local, remote):
@@ -62,6 +62,9 @@ def upload_dir(port, local_dir, remote_dir, skip=(), skip_dirs=()):
     for dirpath, dirnames, filenames in os.walk(local_dir):
         # 跳过指定子目录（如 microdot 单独按目标裁剪上传）
         dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+        for sub in dirnames:
+            rel = os.path.relpath(os.path.join(dirpath, sub), local_dir).replace(os.sep, '/')
+            mkdir(port, remote_dir + '/' + rel)
         for fn in filenames:
             if fn.endswith(('.pyc', '.mjs')) or fn in skip:
                 continue
@@ -136,8 +139,14 @@ def main():
 
     # 上传共享 lib / www（microdot 单独按目标裁剪上传）
     for ldir, rdir in SHARED_DIRS:
+        skip = ()
+        skip_dirs = ('microdot',)
+        if target == 'esp32c3' and rdir == '/www':
+            # C3 用内联单连接页面：codemirror 等独立静态资源不再需要
+            skip = ('app.js', 'style.css')
+            skip_dirs = ('microdot', 'cm')
         upload_dir(args.port, os.path.join(ROOT, ldir), rdir,
-                   skip_dirs=('microdot',))
+                   skip=skip, skip_dirs=skip_dirs)
 
     # microdot（按目标裁剪）
     upload_microdot(args.port, target)
@@ -150,6 +159,11 @@ def main():
     if target == 'esp32c3':
         upload_file(args.port, os.path.join(tdir, 'c3_config.py'),
                     '/c3_config.py')
+        # C3 内联单连接页面（覆盖共享的多文件 index.html）
+        inline = os.path.join(tdir, 'www', 'index.html')
+        if os.path.exists(inline):
+            print('上传 C3 内联页面 -> /www/index.html')
+            upload_file(args.port, inline, '/www/index.html')
         ex = os.path.join(tdir, 'examples')
         if os.path.isdir(ex):
             for fn in os.listdir(ex):
