@@ -105,6 +105,8 @@ async def main():
     check('POST 语法错误被拒', r.status_code == 400)
     r = await cli.post('/api/programs', body={'name': 'bad name!', 'code': 'x=1'})
     check('非法名字被拒', r.status_code == 400)
+    r = await cli.post('/api/programs', body={'name': '中文名', 'code': 'x=1'})
+    check('中文名被拒', r.status_code == 400, (r.text or '')[:100])
 
     # 3. 列表 / 读取
     r = await cli.get('/api/programs')
@@ -223,6 +225,12 @@ async def main():
     # 10. 非法操作
     r = await cli.post('/api/programs/nonexist/start', body={})
     check('启动不存在程序报错', r.status_code == 400)
+    r = await cli.post('/api/programs', body=b'',
+                       headers={'Content-Type': 'application/json'})
+    check('空请求体返回 400 而非 500', r.status_code == 400, (r.text or '')[:100])
+    r = await cli.post('/api/programs', body='not-json',
+                       headers={'Content-Type': 'application/json'})
+    check('畸形请求体返回 400 而非 500', r.status_code == 400, (r.text or '')[:100])
 
     # 11. #type 类型识别（_resolve_type）
     check('自动识别 async (含 async def main)',
@@ -233,6 +241,15 @@ async def main():
           runner.Manager._resolve_type('#type:sync\nasync def main():\n    pass\n') == 'sync')
     check('#type:async 强制',
           runner.Manager._resolve_type('#type:async\nx = 1\n') == 'async')
+
+    # 11b. _safe_name（S3 固件缺失 str.isalnum，须与 CPython 行为一致）
+    check('_safe_name 合法名', runner._safe_name('hello_world2') == 'hello_world2')
+    check('_safe_name 大写数字', runner._safe_name('AbC_09') == 'AbC_09')
+    check('_safe_name 空串', runner._safe_name('') == '')
+    check('_safe_name 下划线开头', runner._safe_name('_abc') == '')
+    check('_safe_name 中文被拒', runner._safe_name('测试') == '')
+    check('_safe_name 特殊字符被拒', runner._safe_name('a-b') == '')
+    check('_safe_name 超长被拒', runner._safe_name('a' * 41) == '')
 
     # 12. 无 async def main 的异步程序 -> error 状态
     r = await cli.post('/api/programs', body={'name': 'nomain', 'code': '#type:async\nimport uvm\nprint(1)\n'})

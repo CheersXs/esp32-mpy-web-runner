@@ -47,9 +47,10 @@ class Program:
 def _safe_name(name):
     if not name:
         return ''
-    ok = all(c.isalnum() or c == '_' for c in name)
-    if not ok:
-        return ''
+    for c in name:
+        o = ord(c)
+        if not (48 <= o <= 57 or 65 <= o <= 90 or 97 <= o <= 122 or c == '_'):
+            return ''
     if name.startswith('_'):
         return ''
     if len(name) > 40:

@@ -193,6 +193,17 @@ def create_app(manager, hub):
     def _json_error(msg, status=400):
         return {'error': msg}, status
 
+    def _json_body(request):
+        try:
+            body = request.json
+        except Exception:
+            return None, _json_error('请求体不是合法 JSON')
+        if body is None:
+            return {}, None
+        if not isinstance(body, dict):
+            return None, _json_error('请求体必须是 JSON 对象')
+        return body, None
+
     def _ok(msg):
         return {'ok': True, 'message': msg}
 
@@ -204,7 +215,9 @@ def create_app(manager, hub):
         auth = cfg.get('auth', {}) or {}
         if not auth.get('enabled'):
             return {'ok': True, 'token': ''}
-        body = request.json or {}
+        body, jerr = _json_body(request)
+        if jerr is not None:
+            return jerr
         if str(body.get('password', '')) == str(auth.get('password', '')):
             token = _new_token()
             _sessions[token] = _now_ms() + SESSION_TTL_MS
@@ -241,7 +254,9 @@ def create_app(manager, hub):
     @app.post('/api/programs')
     @authed
     async def api_create(request):
-        body = request.json or {}
+        body, jerr = _json_body(request)
+        if jerr is not None:
+            return jerr
         name = str(body.get('name', '')).strip()
         code = body.get('code')
         templ = body.get('template')
@@ -266,7 +281,9 @@ def create_app(manager, hub):
     @app.put('/api/programs/<name>')
     @authed
     async def api_save(request, name):
-        body = request.json or {}
+        body, jerr = _json_body(request)
+        if jerr is not None:
+            return jerr
         code = body.get('code')
         if code is None:
             return _json_error('缺少 code 字段')
@@ -288,7 +305,9 @@ def create_app(manager, hub):
     @app.post('/api/programs/<name>/rename')
     @authed
     async def api_rename(request, name):
-        body = request.json or {}
+        body, jerr = _json_body(request)
+        if jerr is not None:
+            return jerr
         new_name = str(body.get('name', '')).strip()
         try:
             nm = manager.rename_program(name, new_name)
@@ -317,7 +336,9 @@ def create_app(manager, hub):
     @app.post('/api/programs/<name>/restart')
     @authed
     async def api_restart(request, name):
-        body = request.json or {}
+        body, jerr = _json_body(request)
+        if jerr is not None:
+            return jerr
         code = body.get('code')
         try:
             p = await manager.restart(name, code)
@@ -348,7 +369,9 @@ def create_app(manager, hub):
     @authed
     async def api_set_config(request):
         cfg = _load_cfg()
-        body = request.json or {}
+        body, jerr = _json_body(request)
+        if jerr is not None:
+            return jerr
         if 'wifi' in body and isinstance(body['wifi'], dict):
             w = body['wifi']
             if isinstance(w.get('ssid'), str):

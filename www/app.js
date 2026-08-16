@@ -34,7 +34,14 @@
     if (opts.body !== undefined) init.body = JSON.stringify(opts.body);
     return fetch(path, init).then(function (res) {
       if (res.status === 401) { showLogin(); throw new Error('需要登录'); }
-      return res.json().then(function (data) {
+      return res.text().then(function (text) {
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+        if (!data && res.status >= 400) {
+          var err = new Error('HTTP ' + res.status + ': ' + (text || '空响应'));
+          err.status = res.status;
+          throw err;
+        }
         if (data && data.error && res.status >= 400) {
           var err = new Error(data.error);
           err.status = res.status;
