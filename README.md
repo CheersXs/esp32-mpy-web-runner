@@ -1,4 +1,4 @@
-# ESP32 MPY Web Runner v2.0.0
+# ESP32 MPY Web Runner v2.0.1
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
