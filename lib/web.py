@@ -23,11 +23,11 @@ WWW_DIR = '/www'
 CM_DIR = WWW_DIR + '/cm'
 
 ASYNC_TEMPLATE = """#type:async
-# 板上可开关的异步程序（可被网页随时停止）
+# Board switchable async program (can be stopped from the web page at any time)
 import uvm
 import machine
 
-led = machine.Pin(2, machine.Pin.OUT)   # 按你的板子改 GPIO
+led = machine.Pin(2, machine.Pin.OUT)   # change the GPIO to match your board
 
 async def main():
     print('blink @ GPIO2 started')
@@ -39,7 +39,7 @@ async def main():
 """
 
 SYNC_TEMPLATE = """#type:sync
-# 同步脚本：在独立线程里运行，跑完即止
+# Sync script: runs in a dedicated thread, ends when done
 import uvm
 
 print('hello from sync program')
@@ -186,7 +186,7 @@ def create_app(manager, hub):
     def authed(fn):
         async def wrapper(request, *args, **kwargs):
             if not _authorized(request):
-                return _json_error('未登录或会话已过期', 401)
+                return _json_error('Not logged in or session expired', 401)
             return await fn(request, *args, **kwargs)
         return wrapper
 
@@ -197,11 +197,11 @@ def create_app(manager, hub):
         try:
             body = request.json
         except Exception:
-            return None, _json_error('请求体不是合法 JSON')
+            return None, _json_error('Request body is not valid JSON')
         if body is None:
             return {}, None
         if not isinstance(body, dict):
-            return None, _json_error('请求体必须是 JSON 对象')
+            return None, _json_error('Request body must be a JSON object')
         return body, None
 
     def _ok(msg):
@@ -227,7 +227,7 @@ def create_app(manager, hub):
                 headers={'Content-Type': 'application/json',
                          'Set-Cookie': ['token=%s; Path=/' % token]})
             return resp
-        return _json_error('密码错误', 403)
+        return _json_error('Wrong password', 403)
 
     @app.post('/api/logout')
     @authed
@@ -276,7 +276,7 @@ def create_app(manager, hub):
             p = manager.get_program(name)
             return {'name': name, 'type': p.type, 'code': code}
         except (OSError, RuntimeError) as e:
-            return _json_error('读取失败：%s' % e, 404)
+            return _json_error('Failed to read: %s' % e, 404)
 
     @app.put('/api/programs/<name>')
     @authed
@@ -286,7 +286,7 @@ def create_app(manager, hub):
             return jerr
         code = body.get('code')
         if code is None:
-            return _json_error('缺少 code 字段')
+            return _json_error('Missing "code" field')
         try:
             p = manager.save_code(name, code)
             return {'ok': True, 'type': p.type}
@@ -298,7 +298,7 @@ def create_app(manager, hub):
     async def api_delete(request, name):
         try:
             manager.delete_program(name)
-            return _ok('已删除 %s' % name)
+            return _ok('Deleted %s' % name)
         except RuntimeError as e:
             return _json_error(str(e))
 
@@ -320,7 +320,7 @@ def create_app(manager, hub):
     async def api_start(request, name):
         try:
             p = manager.start(name)
-            return {'ok': True, 'message': '已启动 %s' % name, 'type': p.type}
+            return {'ok': True, 'message': 'Started %s' % name, 'type': p.type}
         except (RuntimeError, OSError) as e:
             return _json_error(str(e))
 
@@ -329,7 +329,7 @@ def create_app(manager, hub):
     async def api_stop(request, name):
         try:
             manager.stop(name)
-            return {'ok': True, 'message': '已请求停止 %s' % name}
+            return {'ok': True, 'message': 'Stop requested for %s' % name}
         except (RuntimeError, OSError) as e:
             return _json_error(str(e))
 
@@ -342,7 +342,7 @@ def create_app(manager, hub):
         code = body.get('code')
         try:
             p = await manager.restart(name, code)
-            return {'ok': True, 'message': '已重启 %s' % name, 'type': p.type}
+            return {'ok': True, 'message': 'Restarted %s' % name, 'type': p.type}
         except (RuntimeError, OSError) as e:
             return _json_error(str(e))
 
@@ -402,7 +402,7 @@ def create_app(manager, hub):
             net.reconfigure(hub.console)
         except Exception:
             pass
-        return {'ok': True, 'message': '配置已保存，网络正在应用'}
+        return {'ok': True, 'message': 'Config saved, applying network changes'}
 
     @app.post('/api/reboot')
     @authed
@@ -415,7 +415,7 @@ def create_app(manager, hub):
             except Exception:
                 pass
         asyncio.create_task(_do())
-        return _ok('正在重启...')
+        return _ok('Rebooting...')
 
     # ---------- WiFi 扫描 ----------
 
@@ -425,7 +425,7 @@ def create_app(manager, hub):
         try:
             import network
         except Exception:
-            return _json_error('当前环境不支持网络扫描')
+            return _json_error('Network scanning not supported in this environment')
         try:
             sta = network.WLAN(network.STA_IF)
             was_active = bool(sta.active())
@@ -437,7 +437,7 @@ def create_app(manager, hub):
                 if not was_active and sta.active():
                     sta.active(False)
         except Exception as e:
-            return _json_error('扫描失败：%s' % str(e))
+            return _json_error('Scan failed: %s' % str(e))
         out = []
         for n in results:
             try:

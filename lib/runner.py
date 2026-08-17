@@ -114,13 +114,13 @@ class Manager:
     def save_code(self, name, code):
         p = self.get_program(name)
         if p.status == 'running':
-            raise RuntimeError('程序正在运行，请先停止再保存')
+            raise RuntimeError('Program is running, stop it before saving')
         if not isinstance(code, str):
-            raise RuntimeError('代码内容必须是文本')
+            raise RuntimeError('Code content must be text')
         try:
             compile(code, name + '.py', 'exec')
         except Exception as e:
-            raise RuntimeError('语法错误：%s' % e)
+            raise RuntimeError('Syntax error: %s' % e)
         with open(p.path, 'w') as f:
             f.write(code)
         p.type = self._resolve_type(code)
@@ -130,12 +130,12 @@ class Manager:
     def create_program(self, name, code):
         nm = _safe_name(name)
         if not nm:
-            raise RuntimeError('文件名只能包含字母/数字/下划线')
+            raise RuntimeError('File name can only contain letters/digits/underscores')
         p = self.get_program(nm)
         try:
             f = open(p.path, 'r')
             f.close()
-            raise RuntimeError('已存在同名程序')
+            raise RuntimeError('A program with the same name already exists')
         except OSError:
             pass
         self.save_code(nm, code)
@@ -144,27 +144,27 @@ class Manager:
     def delete_program(self, name):
         p = self.get_program(name)
         if p.status == 'running':
-            raise RuntimeError('程序正在运行，请先停止再删除')
+            raise RuntimeError('Program is running, stop it before deleting')
         try:
             os.remove(p.path)
         except OSError:
-            raise RuntimeError('文件不存在')
+            raise RuntimeError('File not found')
         self.programs.pop(name, None)
 
     def rename_program(self, name, new_name):
         nm = _safe_name(new_name)
         if not nm:
-            raise RuntimeError('新文件名只能包含字母/数字/下划线')
+            raise RuntimeError('New file name can only contain letters/digits/underscores')
         p = self.get_program(name)
         if p.status == 'running':
-            raise RuntimeError('程序正在运行，请先停止再重命名')
+            raise RuntimeError('Program is running, stop it before renaming')
         if nm == name:
             return nm
         new_path = PROGRAMS_DIR + '/' + nm + '.py'
         try:
             os.rename(p.path, new_path)
         except OSError:
-            raise RuntimeError('重命名失败（目标可能已存在）')
+            raise RuntimeError('Rename failed (target may already exist)')
         self.programs.pop(name, None)
         return nm
 
@@ -194,7 +194,7 @@ class Manager:
     def start(self, name):
         p = self.programs.get(name)
         if p is not None and (p.task is not None or p.status == 'running'):
-            raise RuntimeError('程序已在运行')
+            raise RuntimeError('Program is already running')
         code = self.read_code(name)
         p = self.get_program(name)
         self.programs[name] = p
@@ -204,14 +204,14 @@ class Manager:
             try:
                 compile(code, name + '.py', 'exec')
             except Exception as e:
-                raise RuntimeError('语法错误：%s' % e)
+                raise RuntimeError('Syntax error: %s' % e)
             p.status = 'running'
             p.task = asyncio.create_task(self._run_async(p, code))
         else:
             if _thread is None:
-                raise RuntimeError('当前固件不支持多线程，无法运行同步脚本')
+                raise RuntimeError('This firmware does not support threads, cannot run sync scripts')
             if self._sync_count >= MAX_SYNC:
-                raise RuntimeError('同步程序并发数已达上限(%d)' % MAX_SYNC)
+                raise RuntimeError('Sync program concurrency limit reached (%d)' % MAX_SYNC)
             p.status = 'running'
             self._sync_count += 1
             try:
@@ -219,8 +219,8 @@ class Manager:
             except Exception as e:
                 self._sync_count -= 1
                 p.status = 'stopped'
-                raise RuntimeError('线程创建失败：%s' % e)
-        self._announce('[%s] 已启动 (%s)' % (name, p.type))
+                raise RuntimeError('Thread creation failed: %s' % e)
+        self._announce('[%s] started (%s)' % (name, p.type))
         return p
 
     async def _run_async(self, p, code):
@@ -232,17 +232,17 @@ class Manager:
             exec(compile(code, p.name + '.py', 'exec'), ns)
             main = ns.get('main')
             if main is None:
-                raise NameError('异步程序必须定义 async def main()')
+                raise NameError('Async program must define async def main()')
             await main()
             p.status = 'stopped'
-            self._announce('[%s] 正常结束' % p.name)
+            self._announce('[%s] finished normally' % p.name)
         except asyncio.CancelledError:
             p.status = 'stopped'
-            self._announce('[%s] 已停止' % p.name)
+            self._announce('[%s] stopped' % p.name)
         except Exception as e:
             p.status = 'error'
             p.error = _fmt_error(e)
-            self._announce('[%s] 出错：%s' % (p.name, p.error))
+            self._announce('[%s] error: %s' % (p.name, p.error))
             try:
                 sys.print_exception(e)
             except Exception:
@@ -260,13 +260,13 @@ class Manager:
             exec(compile(code, p.name + '.py', 'exec'), ns)
             if p.status == 'running':
                 p.status = 'stopped'
-            self._announce('[%s] 正常结束' % p.name)
+            self._announce('[%s] finished normally' % p.name)
         except SystemExit:
             p.status = 'stopped'
         except Exception as e:
             p.status = 'error'
             p.error = _fmt_error(e)
-            self._announce('[%s] 出错：%s' % (p.name, p.error))
+            self._announce('[%s] error: %s' % (p.name, p.error))
             try:
                 sys.print_exception(e, sys.stdout)
             except Exception:
@@ -280,7 +280,7 @@ class Manager:
     def stop(self, name):
         p = self.get_program(name)
         if p.status == 'stopped' and p.task is None:
-            raise RuntimeError('程序没有在运行')
+            raise RuntimeError('Program is not running')
         if p.task is not None:
             task = p.task
             try:
@@ -288,7 +288,7 @@ class Manager:
                     # 任务已结束但状态未清理（协程体未执行就被取消等），手动收尾
                     p.task = None
                     p.status = 'stopped'
-                    raise RuntimeError('程序没有在运行')
+                    raise RuntimeError('Program is not running')
             except RuntimeError:
                 raise
             except Exception:
@@ -317,10 +317,10 @@ class Manager:
                     asyncio.get_event_loop().call_soon(_finalize_cancelled)
                 except Exception:
                     _finalize_cancelled()
-            self._announce('[%s] 发送停止信号...' % name)
+            self._announce('[%s] sending stop signal...' % name)
         else:
             uvm._set_stop(name, True)
-            self._announce('[%s] 请求停止 (等待程序响应)' % name)
+            self._announce('[%s] stop requested (waiting for program to respond)' % name)
 
     async def restart(self, name, code=None):
         """重启程序；若传入 code 则先保存再启动（用于"保存并重启"）。"""
@@ -376,9 +376,9 @@ class Manager:
         for nm in names:
             try:
                 self.start(nm)
-                self._announce('[boot] 自动启动 %s' % nm)
+                self._announce('[boot] auto-start %s' % nm)
             except Exception as e:
-                self._announce('[boot] 自动启动 %s 失败：%s' % (nm, e))
+                self._announce('[boot] auto-start %s failed: %s' % (nm, e))
 
 
 def _fmt_error(e):

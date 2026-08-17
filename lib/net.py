@@ -47,7 +47,7 @@ def _connect_sta(cfg, console):
     sta.active(True)
     if ssid:
         if console:
-            console._push('[net] STA 连接中 %r ...' % (ssid,))
+            console._push('[net] STA connecting %r ...' % (ssid,))
         try:
             sta.connect(ssid, wf.get('password') or '')
             t0 = time.ticks_ms()
@@ -59,10 +59,10 @@ def _connect_sta(cfg, console):
             pass
     if sta.isconnected():
         if console:
-            console._push('[net] STA 已连接, ip=%s' % (sta.ifconfig()[0],))
+            console._push('[net] STA connected, ip=%s' % (sta.ifconfig()[0],))
     else:
         if console:
-            console._push('[net] STA 连接失败（或未配置 WiFi）')
+            console._push('[net] STA connection failed (or WiFi not configured)')
 
 
 def setup_network(cfg, console=None):
@@ -101,9 +101,9 @@ def setup_network(cfg, console=None):
             _thread.start_new_thread(_connect_sta, (cfg, console))
         except Exception as e:
             if console:
-                console._push('STA 后台连接启动失败: %r' % (e,))
+                console._push('[net] STA background connect failed to start: %r' % (e,))
     elif console and result['sta_connected']:
-        console._push('[net] STA 已连接（开机自动恢复）')
+        console._push('[net] STA already connected (auto-restored at boot)')
     return result
 
 

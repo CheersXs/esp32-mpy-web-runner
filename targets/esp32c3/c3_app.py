@@ -433,22 +433,22 @@ def run(sta):
             try:
                 await app.start_server(host=HOST, port=PORT, debug=False)
             except Exception as e:
-                msg = '[web] 服务器启动失败: %r' % (e,)
-                con._push(msg + '，5 秒后重试')
+                msg = '[web] server failed to start: %r' % (e,)
+                con._push(msg + ', retrying in 5s')
                 _oled_error(e)
                 _log_error(msg)
                 for _ in range(25):
                     await _sleep_ms(200)
                 continue
-            con._push('[web] 服务器已停止')
+            con._push('[web] server stopped')
             break
 
     try:
         asyncio.run(bootstrap())
     except KeyboardInterrupt:
-        con._push('[web] 手动停止')
+        con._push('[web] manually stopped')
     except Exception as e:
-        con._push('[web] 异常退出: %r' % (e,))
+        con._push('[web] abnormal exit: %r' % (e,))
         try:
             import io as _io
             _buf = _io.StringIO()

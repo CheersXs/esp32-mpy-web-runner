@@ -25,7 +25,7 @@ def _setup_watchdog():
         import machine
         wdt = machine.WDT(timeout=WDT_TIMEOUT_MS)
     except Exception as e:
-        console.get_console()._push('[boot] 看门狗不可用: %r' % (e,))
+        console.get_console()._push('[boot] watchdog unavailable: %r' % (e,))
     return wdt
 
 
@@ -45,21 +45,21 @@ def main():
     cfg = config.load()
 
     con._push('*' * 46)
-    con._push(' ESP32 Web Runner v%s 启动中...' % config.VERSION)
+    con._push(' ESP32 Web Runner v%s starting...' % config.VERSION)
     con._push('*' * 46)
 
     netinfo = net.setup_network(cfg, con)
     if netinfo['ap_ip']:
-        con._push('[net] AP  运行中  http://%s  (主机名:%s)' %
+        con._push('[net] AP   running  http://%s  (hostname:%s)' %
                   (netinfo['ap_ip'], cfg['ap'].get('ssid', 'ESP32-S3')))
     if netinfo['sta_connected']:
-        con._push('[net] STA 已连接  http://%s  (ssid:%s)' %
+        con._push('[net] STA connected  http://%s  (ssid:%s)' %
                   (netinfo['sta_ip'], netinfo['sta_ssid']))
     elif netinfo['sta_ssid']:
-        con._push('[net] STA 连接中 %r（后台线程，不影响启动）' %
+        con._push('[net] STA connecting %r (background thread, won\'t block boot)' %
                   netinfo['sta_ssid'])
     else:
-        con._push('[net] STA 未连接（可在网页设置里配置 WiFi）')
+        con._push('[net] STA not connected (configure WiFi in the web settings)')
 
     manager = runner_mod.Manager(con)
     hub = web.Hub(con)
@@ -74,12 +74,12 @@ def main():
         if autostart:
             manager.autostart(autostart)
 
-        con._push('[web] 控制台: http://%s' %
+        con._push('[web] console: http://%s' %
                   (netinfo['ap_ip'] or netinfo['sta_ip']))
         try:
             await app.start_server(host=HOST, port=PORT, debug=False)
         except Exception as e:
-            con._push('[web] 服务器启动失败: %r' % (e,))
+            con._push('[web] server failed to start: %r' % (e,))
             return
         while True:
             await asyncio.sleep_ms(60000)
@@ -87,9 +87,9 @@ def main():
     try:
         asyncio.run(bootstrap())
     except KeyboardInterrupt:
-        con._push('[web] 手动停止')
+        con._push('[web] manually stopped')
     except Exception as e:
-        con._push('[web] 异常退出: %r' % (e,))
+        con._push('[web] abnormal exit: %r' % (e,))
         try:
             sys.print_exception(e, sys.stdout)
         except Exception:

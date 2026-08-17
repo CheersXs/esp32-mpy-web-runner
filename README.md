@@ -1,4 +1,6 @@
-# ESP32 MPY Web Runner v2.0.1
+# ESP32 MPY Web Runner v2.1.0
+
+**中文 | [English](README_EN.md)**
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
