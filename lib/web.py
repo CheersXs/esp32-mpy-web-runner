@@ -19,6 +19,10 @@ from microdot.microdot import Microdot, Response, Request
 
 import config
 
+# 允许较大的上传请求体（默认 16KB 会拒绝大文件）。超过 max_body_length 的
+# 请求体留在 request.stream 里流式写盘，内存安全，不一次性读入。
+Request.max_content_length = 1024 * 1024
+
 WWW_DIR = '/www'
 CM_DIR = WWW_DIR + '/cm'
 
@@ -157,7 +161,6 @@ def _live_net():
 def _sys_info():
     mem_free = 0
     try:
-        gc.collect()
         mem_free = gc.mem_free()
     except Exception:
         pass
@@ -178,8 +181,45 @@ def _sys_info():
     }
 
 
+# ---------- C3 并发保护 ----------
+# C3 单核 + 小 lwIP pbuf：同时处理过多请求（尤其大响应传输）会耗尽缓冲，
+# 表现为其余请求全部挂起（CM 分片传输时实测）。限制同时处理的请求数，
+# 超限的直接关闭连接（浏览器 fetch 报网络错误，前端已静默跳过/降级）。
+# S3 多核不限。PC/测试环境 is_c3()=False，同样不限。
+_MAX_CONCURRENT = 3 if config.is_c3() else 0
+_active_requests = 0
+_guard_installed = False
+
+
+def _install_concurrency_guard():
+    global _guard_installed
+    if _guard_installed:
+        return
+    _guard_installed = True
+    import microdot.microdot as _mdot
+    _orig_handle = _mdot.Microdot.handle_request
+
+    async def _guarded(self, reader, writer):
+        global _active_requests
+        if _MAX_CONCURRENT and _active_requests >= _MAX_CONCURRENT:
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+            return
+        _active_requests += 1
+        try:
+            await _orig_handle(self, reader, writer)
+        finally:
+            _active_requests -= 1
+
+    _mdot.Microdot.handle_request = _guarded
+
+
 def create_app(manager, hub):
     global _api
+    _install_concurrency_guard()
     app = Microdot()
 
     # 鉴权打包器
@@ -346,6 +386,37 @@ def create_app(manager, hub):
         except (RuntimeError, OSError) as e:
             return _json_error(str(e))
 
+    # ---------- 文件系统管理（文件管理器 / 远程更新） ----------
+    # fsapi/fsmgr 属"小模块"，按 C3 内存纪律（docs/C3_PORTING_GUIDE.md）在
+    # GC 堆稳定后才延迟加载：保持 web（最大模块）固定导入序列不变，避免编译
+    # 峰值顶破 split-heap 阈值 → wifi 数据通路饿死。
+    # C3 实测启动后 GC free 仅剩 ~7KB（v2.2.0 新增 fsapi/fsmgr 后），81KB 内联
+    # 页都传不完整。fsapi/fsmgr（~10KB）改为"首次 /api/fs/* 请求才 import"：
+    # 页面加载这段大传输发生在 fsapi/fsmgr 未加载、内存最充裕的时段；首次进入
+    # 文件管理器时才加载，随后常驻。S3 内存充裕，行为不变（首次请求同样延迟）。
+    _fs_loaded = [False]
+
+    @app.route('/api/fs/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+    async def _fs_proxy(request, path):
+        if not _fs_loaded[0]:
+            import fsapi
+            fsapi.register(app, config, authed, _json_error, _ok, _sys_info)
+            _fs_loaded[0] = True
+        # fsapi 精确路由是懒加载时才 append 到 url_map 末尾（位于静态兜底
+        # /<path:path> 之后），故必须倒序命中，否则会被静态路由抢走。
+        # 代理常驻：/api/fs/* 一律经此分发，行为与直接注册一致。
+        method = request.method.upper()
+        if method == 'HEAD':
+            method = 'GET'
+        for route_methods, pattern, route_handler, _, _ in reversed(app.url_map):
+            if route_handler is _fs_proxy:
+                continue
+            if method in route_methods:
+                args = pattern.match(request.path)
+                if args is not None:
+                    return await route_handler(request, **args)
+        return _json_error('Not found', 404)
+
     # ---------- 状态 / 配置 ----------
 
     @app.get('/api/status')
@@ -496,7 +567,23 @@ def create_app(manager, hub):
         ext = safe.rsplit('.', 1)[-1].lower() if '.' in safe else ''
         ct = _EXT_TYPES.get(ext, 'application/octet-stream')
         if safe.startswith('cm/'):
-            return _serve(CM_DIR + '/' + safe[3:], ct, 3600)
+            rel = safe[3:]
+            # 预压缩版本优先：C3 弱射频扛不住 ~193KB 单次传输（实测打开
+            # 编辑器拉 cm-bundle 即压垮网络栈），gzip 后 ~65KB。浏览器按
+            # Content-Encoding:gzip 自动解压。板上只传 .gz（无未压缩包），
+            # 若 .gz 也失败浏览器只会 404 → textarea 兜底，页面不崩。
+            gz = CM_DIR + '/' + rel + '.gz'
+            try:
+                os.stat(gz)
+            except OSError:
+                gz = None
+            if gz:
+                try:
+                    return Response.send_file(gz, content_type=ct, max_age=3600,
+                                              compressed=True)
+                except OSError:
+                    pass
+            return _serve(CM_DIR + '/' + rel, ct, 3600)
         return _serve(WWW_DIR + '/' + safe, ct, 0)
 
     _api = app

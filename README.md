@@ -1,4 +1,4 @@
-# ESP32 MPY Web Runner v2.1.0
+# ESP32 MPY Web Runner v2.2.0
 
 **中文 | [English](README_EN.md)**
 
@@ -20,13 +20,19 @@
 > **C3 与 S3 的差异**：C3 不发射 AP 热点，只以 STA 模式连接家里路由器，通过路由器被访问。
 > 这样省去了 AP + DHCP 服务器的底层内存开销，让 400KB SRAM 的 C3 也能稳定运行完整 Web IDE。
 > 同时 C3 通过 OLED 屏幕实时显示 IP 地址，方便通过浏览器访问。
+> 为保护单核 C3 的 lwIP 缓冲，后端**限制最多 3 个并发连接**，超过的直接关闭
+> （浏览器 fetch 报网络错误，前端静默跳过）；S3 不限。
 
 > ESP32-C3 适配的技术原理与内存约束说明，详见 [docs/C3_PORTING_GUIDE.md](docs/C3_PORTING_GUIDE.md)。
 > （C3 无 PSRAM 的内存架构差异、GC split-heap 根因与模块加载顺序要求）。
 
+> 接口协议（REST API / WebSocket / 文件分片读写契约）详见 [docs/API.md](docs/API.md)。
+
 ## 功能
 
 - 📁 **程序管理**：列表、新建、删除、重命名、复制、下载、导入（网页里直接传文件）
+- 🗂 **文件管理（v2.2 新增）**：独立入口，像文件管理器一样浏览/编辑设备**整个文件系统**（`lib/`、`www/`、`programs/`、`config.json`、`main.py`/`boot.py`），支持新建文件/目录、重命名、删除、上传、下载到电脑。`main.py`/`boot.py`/`config.json`/`lib/`/`www/` 等系统关键文件**红色强警告 + 二次确认**（删除/重命名需 `force`）。
+- 🔄 **远程更新（v2.2 新增）**：在网页"更新"页选本地文件夹（或多个文件），按相对路径**批量上传覆盖**应用层代码（新的 `lib/`、`www/`），带进度、结果汇总与"重启生效"按钮。大文件流式写盘，C3 内存安全；文件管理器编辑器对大文件**按 8KB 分片读写**（上限 C3 256KB / S3 512KB），超限文件请用"下载 + 上传"方式修改。
 - ⌨️ **网页编程**：CodeMirror 编辑器（Python 语法高亮 / 自动缩进 / 括号配对 / 自动补全），Ctrl+S 保存
 - ▶️ **开关程序**：异步程序可随时停止；同步脚本在线程里跑，互不阻塞网页
 - 📟 **实时控制台**：WebSocket 把程序 print 输出实时推送到网页
@@ -56,6 +62,7 @@
 ├── lib/                        # 共享库（S3/C3 通用，只维护一份）
 │   ├── config.py               # 配置 + 芯片检测 + 动态资源参数
 │   ├── console.py              # 全局控制台（接管 print 输出）
+│   ├── fsmgr.py                # 文件系统管理（文件管理器 / 远程更新，v2.2）
 │   ├── net.py                  # 网络（AP+STA，按 ap.enabled 决定是否开 AP）
 │   ├── runner.py               # 程序管理器（异步任务 + 线程同步脚本）
 │   ├── uvm.py                  # 用户程序内 import 的辅助库
@@ -66,7 +73,7 @@
 │   ├── index.html
 │   ├── app.js
 │   ├── style.css
-│   └── cm/                     # CodeMirror 编辑器
+│   └── cm/                     # CodeMirror 编辑器（C3 传 gzip 分片）
 ├── programs/
 │   └── examples/               # 共享示例程序
 ├── targets/                    # 板级差异化
@@ -79,6 +86,7 @@
 │       ├── boot.py
 │       ├── c3_config.py        # C3 配置（WiFi / OLED 引脚 / 端口）
 │       ├── www/index.html      # C3 内联单连接页面（build_inline.py 生成）
+│       ├── www/cm/             # CodeMirror gzip 分片 cm-part0..7.js.gz（build 生成）
 │       └── examples/
 │           └── oled_loop.py    # C3 专属 OLED 示例
 ├── docs/
@@ -144,7 +152,8 @@ python tools/upload.py --target esp32c3
 > - 上传对应 `targets/<目标>/` 下的 `main.py` / `boot.py`
 > - 预置 `config.json`（C3 自动写入 `ap.enabled=false` 并预填 WiFi）
 > - C3 额外上传 `c3_config.py`、专属示例程序和**内联单连接页面**
->   （`www/` 只传 `index.html`，跳过 `app.js`/`style.css`/`cm`，省 flash 且浏览器只发 1 个请求）
+>   （`www/` 只传 `index.html`；CodeMirror 合并包预切成 8 个 ~9KB gzip 分片
+>   `cm/cm-part0..7.js.gz` 一并上传，前端按序拉取拼接，规避 C3 弱射频大传输停滞）
 
 ### 4. 访问
 
@@ -207,6 +216,8 @@ C3 的 OLED 实时显示：
   系统，S3 靠看门狗重启兜底，C3 需断电重启——所以长任务请写成异步或至少带上 `uvm.sleep_ms`。
 - 控制台是共享日志流（所有程序 + 系统日志混在一起），未按程序分组。
 - **C3 内存提示**：C3 只有 400KB SRAM，建议程序源码 < 10KB，多写异步程序（`async def main`）。
+- **C3 并发限制**：后端最多同时处理 3 个请求（`web.py` 并发保护，超限直接关闭连接，
+  前端 fetch 报错并静默跳过），保护 C3 弱射频的 lwIP 缓冲不被大响应/多请求打满；S3 不限。
 
 ## 开发 / 测试
 

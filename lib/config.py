@@ -1,7 +1,7 @@
 import json
 import os
 
-VERSION = '2.1.0'
+VERSION = '2.2.0'
 
 CONFIG_PATH = '/config.json'
 
@@ -48,6 +48,14 @@ def console_max_lines():
 def hub_max_queue():
     """WebSocket 离线消息队列上限。C3 降级以省内存。"""
     return 300 if is_c3() else 2000
+
+
+def fs_edit_max():
+    """文件管理器编辑器单次读入的文本大小上限（字节）。
+    前端对大文件分片（8KB/段）读写，避免单次大内存/大传输，故上限放宽：
+    C3 256KB / S3 512KB。仍超上限的文件提示改用"下载 + 上传"方式修改。
+    """
+    return 256 * 1024 if is_c3() else 512 * 1024
 
 
 # ---------- 配置读写 ----------

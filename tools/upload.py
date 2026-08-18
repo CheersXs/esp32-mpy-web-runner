@@ -164,6 +164,15 @@ def main():
         if os.path.exists(inline):
             print('上传 C3 内联页面 -> /www/index.html')
             upload_file(args.port, inline, '/www/index.html')
+        # C3 CodeMirror 分片：app.js 逐个 fetch 拼接（片间强制间隔给 pbuf
+        # 释放窗口）。分片数与 build_inline.CM_PARTS 保持一致。板上不再传
+        # cm-bundle.js.gz：前端只 fetch 分片（见 app.js loadCodeMirror）。
+        mkdir(args.port, '/www/cm')
+        for k in range(8):
+            p = os.path.join(tdir, 'www', 'cm', 'cm-part%d.js.gz' % k)
+            if os.path.exists(p):
+                print('上传 C3 CodeMirror 分片%d -> /www/cm/cm-part%d.js.gz' % (k, k))
+                upload_file(args.port, p, '/www/cm/cm-part%d.js.gz' % k)
         ex = os.path.join(tdir, 'examples')
         if os.path.isdir(ex):
             for fn in os.listdir(ex):

@@ -18,6 +18,7 @@ import asyncio  # noqa: E402
 
 import config  # noqa: E402
 import console  # noqa: E402
+import fsmgr  # noqa: E402
 import runner  # noqa: E402
 import web  # noqa: E402
 
@@ -26,6 +27,7 @@ config.CONFIG_PATH = os.path.join(TMP, 'config.json')
 runner.PROGRAMS_DIR = os.path.join(TMP, 'programs')
 web.WWW_DIR = os.path.join(ROOT, 'www')
 web.CM_DIR = os.path.join(web.WWW_DIR, 'cm')
+fsmgr.FS_ROOT = os.path.join(TMP, 'fs')
 
 
 def make_app():
@@ -387,6 +389,190 @@ async def main():
                  'ap': {'ssid': 'T', 'password': ''},
                  'auth': {'enabled': False, 'password': ''},
                  'autostart': []})
+
+    # 19. 文件系统管理 / 远程更新
+    fsroot = fsmgr.FS_ROOT
+    os.makedirs(os.path.join(fsroot, 'lib', 'microdot'), exist_ok=True)
+    os.makedirs(os.path.join(fsroot, 'www'), exist_ok=True)
+    os.makedirs(os.path.join(fsroot, 'programs'), exist_ok=True)
+    with open(os.path.join(fsroot, 'lib', 'hello.py'), 'wb') as f:
+        f.write(b'print("hi")\n')
+    with open(os.path.join(fsroot, 'config.json'), 'w') as f:
+        f.write('{}\n')
+
+    # 19a. 路径归一化
+    check('normalize /lib/web.py', fsmgr.normalize('/lib/web.py') == '/lib/web.py')
+    check('normalize /a/../b', fsmgr.normalize('/a/../b') == '/b')
+    check('normalize 逃逸根 /.. 被拒', fsmgr.normalize('/..') is None)
+    check('normalize 相对路径被拒', fsmgr.normalize('lib/x') is None)
+    check('normalize 空路径被拒', fsmgr.normalize('') is None)
+    check('normalize ./ 折叠', fsmgr.normalize('/a/./b') == '/a/b')
+
+    # 19b. 危险文件判定
+    check('危险: config.json', fsmgr.is_dangerous('/config.json') is True)
+    check('危险: /lib/web.py', fsmgr.is_dangerous('/lib/web.py') is True)
+    check('危险: /www/index.html', fsmgr.is_dangerous('/www/index.html') is True)
+    check('危险: /main.py', fsmgr.is_dangerous('/main.py') is True)
+    check('安全: /programs/x.py', fsmgr.is_dangerous('/programs/x.py') is False)
+
+    # 19c. 目录列表
+    r = await cli.get('/api/fs/list?path=/')
+    check('fs list / 200', r.status_code == 200, (r.text or '')[:100])
+    names0 = {e['name'] for e in r.json['entries']}
+    check('fs list / 含 lib/www/programs/config.json',
+          {'lib', 'www', 'programs', 'config.json'} <= names0, str(names0))
+    check('fs list 返回 free/dangerous', 'free' in r.json and 'dangerous' in r.json)
+    r = await cli.get('/api/fs/list?path=/lib')
+    libnames = [e['name'] for e in r.json['entries']]
+    check('fs list /lib 含 hello.py/microdot',
+          'hello.py' in libnames and 'microdot' in libnames, str(libnames))
+    r = await cli.get('/api/fs/list?path=/../x')
+    check('fs list 穿越被拒', r.status_code == 400)
+
+    # 19d. 读取
+    r = await cli.get('/api/fs/read?path=/lib/hello.py')
+    check('fs read hello.py', r.status_code == 200 and r.json.get('text') == 'print("hi")\n',
+          (r.text or '')[:100])
+    r = await cli.get('/api/fs/read?path=/lib/nonexist.py')
+    check('fs read 不存在 404', r.status_code == 404)
+    r = await cli.get('/api/fs/read?path=/lib')
+    check('fs read 目录 400', r.status_code == 400)
+
+    # 19e. 上传/覆盖（含自动建父目录）
+    r = await cli.put('/api/fs/file?path=/programs/x.py',
+                      body=b'x = 1\n', headers={'Content-Type': 'application/octet-stream'})
+    check('fs put 新建文件', r.status_code == 200, (r.text or '')[:100])
+    r = await cli.put('/api/fs/file?path=/programs/x.py',
+                      body=b'x = 2\n', headers={'Content-Type': 'application/octet-stream'})
+    check('fs put 覆盖文件', r.status_code == 200)
+    r = await cli.get('/api/fs/read?path=/programs/x.py')
+    check('fs put 覆盖生效', r.json.get('text') == 'x = 2\n')
+    r = await cli.put('/api/fs/file?path=/lib/a/b/c.py',
+                      body=b'deep\n', headers={'Content-Type': 'application/octet-stream'})
+    check('fs put 自动建父目录', r.status_code == 200, (r.text or '')[:100])
+    r = await cli.get('/api/fs/read?path=/lib/a/b/c.py')
+    check('fs put 深层文件可读', r.json.get('text') == 'deep\n')
+    r = await cli.put('/api/fs/file?path=/lib',
+                      body=b'x', headers={'Content-Type': 'application/octet-stream'})
+    check('fs put 写入目录被拒', r.status_code == 400)
+    r = await cli.put('/api/fs/file?path=/lib/empty.txt', body=b'',
+                      headers={'Content-Type': 'application/octet-stream'})
+    check('fs put 空文件', r.status_code == 200)
+    r = await cli.get('/api/fs/read?path=/lib/empty.txt')
+    check('fs put 空文件可读', r.json.get('text') == '')
+
+    # 19f. 大文件流式上传（>16KB 走 stream）
+    big = b'big-data-line\n' * 16000  # ~176KB
+    r = await cli.put('/api/fs/file?path=/lib/big.py', body=big,
+                      headers={'Content-Type': 'application/octet-stream'})
+    check('fs put 大文件(流式)', r.status_code == 200, (r.text or '')[:100])
+    check('fs 大文件写盘字节数', fsmgr.size('/lib/big.py') == len(big),
+          'size=%d want=%d' % (fsmgr.size('/lib/big.py'), len(big)))
+    r = await cli.get('/api/fs/file?path=/lib/big.py')
+    check('fs download 大文件 200', r.status_code == 200)
+    check('fs download 内容一致', r.body == big)
+    cd = r.headers.get('Content-Disposition', '')
+    check('fs download 带 Content-Disposition', 'attachment' in cd, cd)
+
+    # 19f2. 分段读取（前端循环 offset/limit 拼接）
+    got = b''
+    off = 0
+    end = 0
+    while True:
+        r = await cli.get('/api/fs/read?path=/lib/big.py&offset=%d&limit=8192' % off)
+        check('fs read 分段 %d 200' % off, r.status_code == 200, (r.text or '')[:80])
+        j = r.json
+        got += j['text'].encode('utf-8')
+        end = j['offset']
+        if j['done']:
+            break
+        off = j['offset']
+    check('fs read 分段拼接 == 原文件', got == big,
+          'len=%d want=%d' % (len(got), len(big)))
+    check('fs read 分段 offset 推进到 EOF', end == len(big))
+
+    # 19f3. UTF-8 字符边界分段（limit 故意切破多字节字符）
+    uni = '中文字符串🙂测试abc'.encode('utf-8')
+    with open(os.path.join(fsroot, 'lib', 'uni.py'), 'wb') as f:
+        f.write(uni)
+    joined = b''
+    off = 0
+    while True:
+        r = await cli.get('/api/fs/read?path=/lib/uni.py&offset=%d&limit=7' % off)
+        check('fs read UTF-8 分段 %d 200' % off, r.status_code == 200, (r.text or '')[:80])
+        j = r.json
+        joined += j['text'].encode('utf-8')
+        if j['done']:
+            break
+        off = j['offset']
+    check('fs read UTF-8 边界分段无损', joined == uni,
+          'joined=%r want=%r' % (joined, uni))
+
+    # 19f4. 分段写入（前端分片 PUT append=0/1 + final=1）
+    CH = 8192
+    for i in range(0, len(big), CH):
+        chunk = big[i:i + CH]
+        append = '0' if i == 0 else '1'
+        final = '1' if i + CH >= len(big) else '0'
+        r = await cli.put(
+            '/api/fs/file?path=/programs/big.py&append=%s&final=%s' % (append, final),
+            body=chunk, headers={'Content-Type': 'application/octet-stream'})
+        check('fs put 分片 %d 200' % i, r.status_code == 200, (r.text or '')[:80])
+    check('fs put 分片写盘字节数', fsmgr.size('/programs/big.py') == len(big),
+          'size=%d want=%d' % (fsmgr.size('/programs/big.py'), len(big)))
+    with open(os.path.join(fsroot, 'programs', 'big.py'), 'rb') as f:
+        check('fs put 分片内容一致', f.read() == big)
+
+    # 19f5. 超过 fs_edit_max（512KB）仍 413
+    huge = b'x' * (600 * 1024)
+    with open(os.path.join(fsroot, 'lib', 'huge.py'), 'wb') as f:
+        f.write(huge)
+    r = await cli.get('/api/fs/read?path=/lib/huge.py')
+    check('fs read 超限 413', r.status_code == 413)
+
+    # 19g. mkdir
+    r = await cli.post('/api/fs/mkdir?path=/lib/newdir', body={})
+    check('fs mkdir', r.status_code == 200, (r.text or '')[:100])
+    check('fs mkdir 后存在', fsmgr.is_dir('/lib/newdir'))
+    r = await cli.post('/api/fs/mkdir?path=/lib/newdir', body={})
+    check('fs mkdir 已存在 400', r.status_code == 400)
+    r = await cli.post('/api/fs/mkdir?path=/..', body={})
+    check('fs mkdir 非法路径 400', r.status_code == 400)
+
+    # 19h. rename（危险路径需 force）
+    r = await cli.post('/api/fs/rename', body={'from': '/programs/x.py', 'to': '/programs/y.py'})
+    check('fs rename 普通文件', r.status_code == 200, (r.text or '')[:100])
+    check('fs rename 后存在', fsmgr.exists('/programs/y.py'))
+    r = await cli.post('/api/fs/rename', body={'from': '/config.json', 'to': '/cfg.json'})
+    check('fs rename 危险无force被拒', r.status_code == 400)
+    r = await cli.post('/api/fs/rename', body={'from': '/config.json', 'to': '/cfg.json', 'force': True})
+    check('fs rename 危险带force成功', r.status_code == 200, (r.text or '')[:100])
+    check('fs rename 后 cfg.json 存在', fsmgr.exists('/cfg.json'))
+
+    # 19i. delete（危险路径需 force；目录需 recursive）
+    r = await cli.post('/api/fs/delete?path=/programs/y.py', body={})
+    check('fs delete 文件', r.status_code == 200)
+    check('fs delete 后不存在', not fsmgr.exists('/programs/y.py'))
+    r = await cli.post('/api/fs/mkdir?path=/programs/nd', body={})
+    check('fs delete 前建空目录', r.status_code == 200)
+    r = await cli.post('/api/fs/delete?path=/programs/nd', body={})
+    check('fs delete 空目录', r.status_code == 200)
+    os.makedirs(os.path.join(fsroot, 'lib', 'r'), exist_ok=True)
+    with open(os.path.join(fsroot, 'lib', 'r', 'inner.txt'), 'w') as f:
+        f.write('x')
+    r = await cli.post('/api/fs/delete?path=/lib/r', body={})
+    check('fs delete 危险无force被拒', r.status_code == 400)
+    r = await cli.post('/api/fs/delete?path=/lib/r&force=1', body={})
+    check('fs delete 非空目录无recursive被拒', r.status_code == 400)
+    r = await cli.post('/api/fs/delete?path=/lib/r&recursive=1&force=1', body={})
+    check('fs delete 非空目录递归(带force)', r.status_code == 200)
+    check('fs delete 递归后目录不存在', not fsmgr.exists('/lib/r'))
+    r = await cli.post('/api/fs/delete?path=/www', body={})
+    check('fs delete 危险无force被拒', r.status_code == 400)
+    r = await cli.post('/api/fs/delete?path=/www&force=1&recursive=1', body={})
+    check('fs delete 危险带force递归成功', r.status_code == 200)
+    r = await cli.post('/api/fs/delete?path=/', body={})
+    check('fs delete 根目录被拒', r.status_code == 400)
 
     print('---')
     print('passed=%d failed=%d' % (passed, failed))

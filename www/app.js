@@ -97,6 +97,53 @@
       'wifi.noneFound': '附近没有发现可用 WiFi',
       'wifi.scanHint': '点击下拉选择要连接的 WiFi，然后填密码',
       'wifi.scanFailed': '扫描失败：',
+      'top.filemgr': '📁 文件管理',
+      'top.filemgrTitle': '浏览/编辑设备文件，远程更新应用层代码',
+      'fm.close': '✕ 返回',
+      'fm.title': '📁 文件管理',
+      'fm.tabBrowse': '浏览',
+      'fm.tabUpdate': '更新',
+      'fm.up': '⬆ 上级',
+      'fm.newFile': '＋ 新建文件',
+      'fm.newDir': '＋ 新建目录',
+      'fm.upload': '⬆ 上传',
+      'fm.refresh': '↻ 刷新',
+      'fm.save': '💾 保存',
+      'fm.rename': '✎ 重命名',
+      'fm.download': '⬇ 下载',
+      'fm.delete': '🗑 删除',
+      'fm.upWarn': '⚠️ 上传将覆盖设备上的同名文件！修改 lib/ 与 www/ 应用层代码后，需重启板子才会生效。',
+      'fm.upPick': '📂 选择本地文件夹或文件',
+      'fm.upBaseLabel': '目标根目录（设备端，默认 /）',
+      'fm.upStart': '🚀 开始上传',
+      'fm.upHint': '选择文件后这里会显示将上传到设备的文件与目标路径。',
+      'fm.listEmpty': '（空目录）',
+      'fm.nofile': '在左侧选择文件进行编辑',
+      'fm.fileDanger': '系统文件！修改需谨慎，重启后生效',
+      'fm.warnDanger': '🔴 当前目录包含系统文件/应用层代码（lib、www），修改需谨慎，重启板子后生效。',
+      'fm.toastSaved': '已保存',
+      'fm.toastCreated': '已创建',
+      'fm.toastDeleted': '已删除',
+      'fm.toastRenamed': '已重命名',
+      'fm.toastUploaded': '已上传',
+      'fm.confirmDelete': '确定删除',
+      'fm.confirmDeleteDanger': '🔴 这是系统文件，删除可能导致设备无法启动！确定删除',
+      'fm.confirmRenameDanger': '🔴 这是系统文件，重命名可能导致设备无法启动！确定重命名？',
+      'fm.confirmLeave': '当前文件有未保存的修改，继续会丢失。确定？',
+      'fm.renamePrompt': '新文件名：',
+      'fm.newFilePrompt': '新文件名（如 test.py）：',
+      'fm.newDirPrompt': '新目录名：',
+      'fm.emptyName': '名字不能为空',
+      'fm.upCount': '将上传',
+      'fm.upTotal': '共',
+      'fm.upConfirm': '开始上传？将覆盖设备上的同名文件！',
+      'fm.upProgress': '上传中',
+      'fm.upDone': '全部上传完成，共',
+      'fm.upFiles': '个文件',
+      'fm.upPartial': '部分失败，成功',
+      'fm.upFailOne': '上传失败',
+      'fm.upReboot': '↻ 重启板子使新代码生效',
+      'fm.upRebootNote': 'lib/、www/ 等应用层代码需重启后才生效。',
     },
     en: {
       'top.brand': 'ESP32 Web Runner',
@@ -190,6 +237,53 @@
       'wifi.noneFound': 'No WiFi networks found nearby',
       'wifi.scanHint': 'Pick a network from the dropdown, then enter the password',
       'wifi.scanFailed': 'Scan failed:',
+      'top.filemgr': '📁 File Manager',
+      'top.filemgrTitle': 'Browse/edit device files, remotely update app code',
+      'fm.close': '✕ Back',
+      'fm.title': '📁 File Manager',
+      'fm.tabBrowse': 'Browse',
+      'fm.tabUpdate': 'Update',
+      'fm.up': '⬆ Up',
+      'fm.newFile': '＋ New file',
+      'fm.newDir': '＋ New folder',
+      'fm.upload': '⬆ Upload',
+      'fm.refresh': '↻ Refresh',
+      'fm.save': '💾 Save',
+      'fm.rename': '✎ Rename',
+      'fm.download': '⬇ Download',
+      'fm.delete': '🗑 Delete',
+      'fm.upWarn': '⚠️ Uploads will overwrite files with the same name on the device! Changes to lib/ and www/ take effect only after a reboot.',
+      'fm.upPick': '📂 Pick local folder or files',
+      'fm.upBaseLabel': 'Target root (device path, default /)',
+      'fm.upStart': '🚀 Start upload',
+      'fm.upHint': 'After picking files, the target paths on the device are shown here.',
+      'fm.listEmpty': '(empty folder)',
+      'fm.nofile': 'Select a file on the left to edit',
+      'fm.fileDanger': 'System file! Edit with care; takes effect after reboot',
+      'fm.warnDanger': '🔴 This folder contains system/app-layer files (lib, www). Edit with care; changes take effect after reboot.',
+      'fm.toastSaved': 'Saved',
+      'fm.toastCreated': 'Created',
+      'fm.toastDeleted': 'Deleted',
+      'fm.toastRenamed': 'Renamed',
+      'fm.toastUploaded': 'Uploaded',
+      'fm.confirmDelete': 'Delete',
+      'fm.confirmDeleteDanger': '🔴 This is a system file; deleting it may brick the device! Delete',
+      'fm.confirmRenameDanger': '🔴 This is a system file; renaming it may brick the device! Rename?',
+      'fm.confirmLeave': 'Current file has unsaved changes. Continue will lose them. OK?',
+      'fm.renamePrompt': 'New file name:',
+      'fm.newFilePrompt': 'New file name (e.g. test.py):',
+      'fm.newDirPrompt': 'New folder name:',
+      'fm.emptyName': 'Name cannot be empty',
+      'fm.upCount': 'Uploading',
+      'fm.upTotal': 'total',
+      'fm.upConfirm': 'Start upload? Files with the same name on the device will be overwritten!',
+      'fm.upProgress': 'Uploading',
+      'fm.upDone': 'All uploaded,',
+      'fm.upFiles': 'files',
+      'fm.upPartial': 'Some failed, succeeded',
+      'fm.upFailOne': 'Upload failed',
+      'fm.upReboot': '↻ Reboot board to apply',
+      'fm.upRebootNote': 'App-layer code (lib/, www/) only takes effect after reboot.',
     },
   };
 
@@ -288,9 +382,11 @@
 
   /* ---------- 编辑器 ---------- */
   var editor;
-  function initEditor() {
-    editor = CodeMirror($('editor'), {
-      value: '',
+  var editorHost;
+  var fmEditorHost;
+
+  function editorCfg() {
+    return {
       mode: { name: 'python', version: 3, singleLineStringErrors: false },
       lineNumbers: true,
       indentUnit: 4,
@@ -303,8 +399,115 @@
         'Ctrl-S': function (cm) { saveProgram(false); },
       },
       hintOptions: { completeSingle: false },
+    };
+  }
+
+  function fmEditorCfg() {
+    return {
+      mode: null,
+      lineNumbers: true,
+      indentUnit: 4,
+      tabSize: 4,
+      matchBrackets: true,
+      autoCloseBrackets: true,
+      extraKeys: { 'Ctrl-S': function () { fmSave(); } },
+    };
+  }
+
+  /* C3 上 CodeMirror 由 cm 分片（cm-partK.js.gz）延迟加载，先给 textarea
+     兜底，保证页面可用。 */
+  function makeFallback(host, onChange) {
+    var ta = document.createElement('textarea');
+    ta.className = 'ta-fallback';
+    ta.spellcheck = false;
+    host.appendChild(ta);
+    if (onChange) ta.addEventListener('input', onChange);
+    return {
+      isFallback: true,
+      getValue: function () { return ta.value || ''; },
+      setValue: function (v) { ta.value = v || ''; },
+      refresh: function () {},
+      setOption: function () {},
+      on: function () {},
+    };
+  }
+
+  function cmOrFallback(host, cfg, onChange) {
+    if (typeof CodeMirror === 'function') {
+      var cm = CodeMirror(host, cfg);
+      cm.on('change', onChange);
+      return cm;
+    }
+    return makeFallback(host, onChange);
+  }
+
+  function initEditor() {
+    editorHost = $('editor');
+    editor = cmOrFallback(editorHost, editorCfg(),
+      function () { state.dirty = true; updateTitle(); });
+  }
+
+  /* cm 分片全部到达并 eval 后，把 textarea 兜底升级为 CodeMirror，保留已编辑内容。 */
+  function upgradeToCm(name) {
+    if (typeof CodeMirror !== 'function') return false;
+    var host = name === 'fm' ? fmEditorHost : editorHost;
+    var cur = name === 'fm' ? fmEditor : editor;
+    if (!host || !cur || !cur.isFallback) return false;
+    var val = cur.getValue();
+    host.innerHTML = '';
+    if (name === 'fm') {
+      fmEditor = CodeMirror(host, fmEditorCfg());
+      fmEditor.on('change', function () { fm.dirty = true; fmUpdateUi(); });
+    } else {
+      editor = CodeMirror(host, editorCfg());
+      editor.on('change', function () { state.dirty = true; updateTitle(); });
+    }
+    var cm = name === 'fm' ? fmEditor : editor;
+    cm.setValue(val);
+    cm.refresh();
+    return true;
+  }
+
+  /* C3：打开编辑器（openProgram / fmOpenFile）时自动拉取 CodeMirror 合并包。
+     ~193KB 单次传输会压垮单核 C3 的 lwIP 缓冲，故切成多个 ~8KB gzip 分片
+     逐个 fetch，片间保留 600ms 间隔给 lwIP pbuf 释放窗口。后端另有并发上限
+     （C3 限 3 并发，超限关闭连接）兜底，前端不再做任何限制/暂停。
+     S3 已同步加载 CodeMirror，此函数直接跳过。分片数由 build_inline.py
+     生成内联页时按实际值替换。 */
+  var CM_PARTS = 4;
+  var CM_GAP = 600;
+  var cmLoading = false;
+  var _cmParts = [];
+  function loadCodeMirror() {
+    if (cmLoading || typeof CodeMirror === 'function' ||
+        !((editor && editor.isFallback) || (fmEditor && fmEditor.isFallback))) {
+      return;
+    }
+    cmLoading = true;
+    _cmParts.length = 0;
+    _fetchCmPart(0);
+  }
+  function _fetchCmPart(i) {
+    fetch('/cm/cm-part' + i + '.js', {cache: 'no-store'}).then(function (r) {
+      if (!r.ok) throw new Error('cm-part' + i + ' HTTP ' + r.status);
+      return r.text();
+    }).then(function (text) {
+      _cmParts[i] = text;
+      if (i + 1 < CM_PARTS) {
+        setTimeout(function () { _fetchCmPart(i + 1); }, CM_GAP);
+        return;
+      }
+      var code = _cmParts.join('');
+      _cmParts.length = 0;
+      /* 间接 eval：在全局作用域执行，CodeMirror 的 var 声明成为全局。 */
+      (0, eval)(code);
+      cmLoading = false;
+      upgradeToCm('editor');
+      upgradeToCm('fm');
+    }).catch(function () {
+      cmLoading = false;
+      /* 分片失败不自动重试：保持安静降级 textarea。 */
     });
-    editor.on('change', function () { state.dirty = true; updateTitle(); });
   }
 
   function updateTitle() {
@@ -395,6 +598,7 @@
     if (state.dirty) {
       if (!confirm(t('confirm.unsaved'))) return;
     }
+    loadCodeMirror();
     api('/api/programs/' + encodeURIComponent(name)).then(function (data) {
       editor.setValue(data.code || '');
       state.current = data.name;
@@ -742,14 +946,467 @@
       e.target.value = '';
     });
 
+    /* 文件管理 / 远程更新 */
+    $('btn-filemgr').addEventListener('click', openFilemgr);
+    $('fm-close').addEventListener('click', closeFilemgr);
+    $('fm-tab-browse').addEventListener('click', function () { fmSwitchTab('browse'); });
+    $('fm-tab-update').addEventListener('click', function () { fmSwitchTab('update'); });
+    $('fm-up').addEventListener('click', function () {
+      if (!fmConfirmLeave()) return;
+      var p = fm.path;
+      if (p === '/') return;
+      fm.path = p.replace(/\/+$/, '').replace(/\/[^/]*$/, '') || '/';
+      fm.currentFile = null; fm.dirty = false;
+      fmEditor.setValue('');
+      fmUpdateUi();
+      fmList();
+    });
+    $('fm-refresh').addEventListener('click', fmList);
+    $('fm-newfile').addEventListener('click', fmNewFile);
+    $('fm-newdir').addEventListener('click', fmNewDir);
+    $('fm-upload').addEventListener('click', fmUpload);
+    $('fm-save').addEventListener('click', fmSave);
+    $('fm-rename').addEventListener('click', fmRename);
+    $('fm-download').addEventListener('click', fmDownload);
+    $('fm-delete').addEventListener('click', fmDelete);
+    $('up-pick').addEventListener('click', function () { $('up-files').click(); });
+    $('up-files').addEventListener('change', onUpFilesChange);
+    $('up-base').addEventListener('input', onUpFilesChange);
+    $('up-start').addEventListener('click', startUpload);
+
     window.addEventListener('beforeunload', function (ev) {
       if (state.dirty) { ev.preventDefault(); ev.returnValue = ''; }
     });
   }
 
+  /* ---------- 文件管理 / 远程更新 ---------- */
+  var fm = {
+    path: '/',
+    currentFile: null,   // {name, path, dangerous, size}
+    dirty: false,
+    rows: [],
+    uploading: false,
+  };
+
+  function el(tag, text, cls) {
+    var n = document.createElement(tag);
+    if (text !== undefined && text !== null) n.textContent = text;
+    if (cls) n.className = cls;
+    return n;
+  }
+
+  function fmJoin(base, name) {
+    var b = String(base == null ? '/' : base);
+    b = b.replace(/\/+$/, '') || '/';
+    if (b === '/') return '/' + name;
+    return b + '/' + name;
+  }
+
+  function fmSize(n) {
+    if (n == null) return '?';
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  function isDangerPath(p) {
+    var boots = ['/main.py', '/boot.py', '/c3_config.py', '/config.json'];
+    if (boots.indexOf(p) >= 0) return true;
+    return p === '/lib' || p.indexOf('/lib/') === 0 ||
+      p === '/www' || p.indexOf('/www/') === 0;
+  }
+
+  function putRaw(path, content, extraQuery) {
+    var headers = { 'X-Auth-Token': state.token, 'Content-Type': 'application/octet-stream' };
+    return fetch('/api/fs/file?path=' + encodeURIComponent(path) + (extraQuery || ''), {
+      method: 'PUT', headers: headers, body: content,
+    }).then(function (res) {
+      if (res.status === 401) { showLogin(); throw new Error(t('err.loginRequired')); }
+      return res.text().then(function (text) {
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+        if (!data && res.status >= 400) {
+          var err = new Error('HTTP ' + res.status + ': ' + (text || t('err.emptyResponse')));
+          err.status = res.status;
+          throw err;
+        }
+        if (data && data.error && res.status >= 400) {
+          var err = new Error(data.error);
+          err.status = res.status;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+
+  var fmEditor;
+  function initFmEditor() {
+    fmEditorHost = $('fm-editor');
+    fmEditor = cmOrFallback(fmEditorHost, fmEditorCfg(),
+      function () { fm.dirty = true; fmUpdateUi(); });
+  }
+
+  function openFilemgr() {
+    show('filemgr');
+    fmSwitchTab('browse');
+    fmList();
+  }
+
+  function closeFilemgr() {
+    if (fm.dirty && fm.currentFile) {
+      if (!confirm(t('fm.confirmLeave'))) return;
+    }
+    hide('filemgr');
+    refreshPrograms();
+  }
+
+  function fmSwitchTab(tab) {
+    $('fm-tab-browse').classList.toggle('active', tab === 'browse');
+    $('fm-tab-update').classList.toggle('active', tab === 'update');
+    $('fm-browse').classList.toggle('hidden', tab !== 'browse');
+    $('fm-update').classList.toggle('hidden', tab !== 'update');
+    if (tab === 'browse') setTimeout(function () { fmEditor.refresh(); }, 50);
+  }
+
+  function fmConfirmLeave() {
+    if (fm.dirty && fm.currentFile) return confirm(t('fm.confirmLeave'));
+    return true;
+  }
+
+  function fmList() {
+    api('/api/fs/list?path=' + encodeURIComponent(fm.path)).then(function (data) {
+      fm.path = data.path || fm.path;
+      $('fm-path').textContent = fm.path;
+      var warn = $('fm-warn');
+      if (data.dangerous) { warn.classList.remove('hidden'); warn.textContent = t('fm.warnDanger'); }
+      else warn.classList.add('hidden');
+      renderFmList(data.entries || []);
+    }).catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function renderFmList(entries) {
+    var ul = $('fm-list');
+    ul.innerHTML = '';
+    entries.forEach(function (e) {
+      var li = document.createElement('li');
+      var full = fmJoin(fm.path, e.name);
+      if (fm.currentFile && fm.currentFile.path === full) li.className = 'active';
+      var name = el('span', (e.dir ? '📁 ' : '📄 ') + e.name, 'fm-name ' + (e.dir ? 'dir' : 'file'));
+      var size = el('span', e.dir ? '—' : fmSize(e.size), 'fm-size muted');
+      var danger = el('span', isDangerPath(full) ? '🔴' : '', 'fm-danger');
+      li.appendChild(name);
+      li.appendChild(danger);
+      li.appendChild(size);
+      li.onclick = function () {
+        if (!fmConfirmLeave()) return;
+        if (e.dir) {
+          fm.path = full;
+          fm.currentFile = null; fm.dirty = false;
+          fmEditor.setValue('');
+          fmUpdateUi();
+          fmList();
+        } else {
+          fmOpenFile(e.name);
+        }
+      };
+      ul.appendChild(li);
+    });
+    if (!entries.length) ul.appendChild(el('li', t('fm.listEmpty'), 'muted'));
+  }
+
+  /* 文件管理器大文件分段读：单次 read 限制 limit 字节（C3 弱射频大响应
+     会停滞），循环拉取后前端拼接。每段在 UTF-8 字符边界切开，拼接无损。 */
+  var FM_CHUNK = 8192;
+  function fmFetchText(p) {
+    return api('/api/fs/read?path=' + encodeURIComponent(p) + '&limit=' + FM_CHUNK)
+      .then(function (first) {
+        if (first.done) return { meta: first, text: first.text || '' };
+        var parts = [first.text || ''];
+        var off = first.offset;
+        function next() {
+          return api('/api/fs/read?path=' + encodeURIComponent(p) +
+              '&offset=' + off + '&limit=' + FM_CHUNK).then(function (d) {
+            parts.push(d.text || '');
+            off = d.offset;
+            if (!d.done) return next();
+            return { meta: first, text: parts.join('') };
+          });
+        }
+        return next();
+      });
+  }
+
+  function fmOpenFile(name) {
+    loadCodeMirror();
+    var p = fmJoin(fm.path, name);
+    fmFetchText(p).then(function (r) {
+      var data = r.meta;
+      fm.currentFile = { name: data.name, path: data.path, dangerous: data.dangerous, size: data.size };
+      fm.dirty = false;
+      fmEditor.setValue(r.text || '');
+      fmEditor.setOption('mode',
+        name.toLowerCase().slice(-3) === '.py' ? { name: 'python', version: 3 } : null);
+      fmUpdateUi();
+    }).catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function fmUpdateUi() {
+    var has = fm.currentFile != null;
+    $('fm-save').disabled = !has;
+    $('fm-rename').disabled = !has;
+    $('fm-download').disabled = !has;
+    $('fm-delete').disabled = !has;
+    var info = $('fm-fileinfo');
+    if (has) {
+      var danger = fm.currentFile.dangerous ? ' 🔴 ' + t('fm.fileDanger') : '';
+      info.textContent = fm.currentFile.path + '  (' + fmSize(fm.currentFile.size) + ')' + danger;
+      info.className = fm.currentFile.dangerous ? 'fm-fileinfo danger' : 'fm-fileinfo muted';
+      $('fm-save').textContent = (fm.dirty ? '● ' : '') + t('fm.save');
+    } else {
+      info.textContent = t('fm.nofile');
+      info.className = 'fm-fileinfo muted';
+      $('fm-save').textContent = t('fm.save');
+    }
+  }
+
+  function fmSave() {
+    if (!fm.currentFile) return;
+    var text = fmEditor.getValue();
+    var bytes = new TextEncoder().encode(text);
+    if (bytes.length <= FM_CHUNK) {
+      putRaw(fm.currentFile.path, bytes).then(fmSaved)
+        .catch(function (err) { toast(err.message, 'error'); });
+      return;
+    }
+    /* 大文件分片保存：首片 append=0（后端开 .tmp 覆盖），后续 append=1
+       追加，最后一片 final=1 提交。严格顺序，失败中止。 */
+    var off = 0;
+    function next(append) {
+      var chunk = bytes.subarray(off, Math.min(off + FM_CHUNK, bytes.length));
+      var final = (off + chunk.length >= bytes.length);
+      var q = '&append=' + (append ? '1' : '0') + (final ? '&final=1' : '');
+      return putRaw(fm.currentFile.path, chunk, q).then(function () {
+        off += chunk.length;
+        if (off < bytes.length) return next(true);
+      });
+    }
+    next(false).then(fmSaved)
+      .catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function fmSaved() {
+    fm.dirty = false;
+    fmUpdateUi();
+    toast(t('fm.toastSaved') + ' ' + fm.currentFile.name, 'ok');
+  }
+
+  function fmRename() {
+    if (!fm.currentFile) return;
+    var newName = prompt(t('fm.renamePrompt'), fm.currentFile.name);
+    if (!newName) return;
+    newName = newName.trim();
+    if (!newName) { toast(t('fm.emptyName'), 'error'); return; }
+    if (newName === fm.currentFile.name) return;
+    var to = fmJoin(fm.path, newName);
+    var danger = fm.currentFile.dangerous || isDangerPath(to);
+    if (danger && !confirm(t('fm.confirmRenameDanger'))) return;
+    api('/api/fs/rename', { method: 'POST', body: { from: fm.currentFile.path, to: to, force: danger || undefined } })
+      .then(function () {
+        fm.currentFile.path = to;
+        fm.currentFile.name = newName;
+        fm.currentFile.dangerous = isDangerPath(to);
+        fmList();
+        fmUpdateUi();
+        toast(t('fm.toastRenamed'), 'ok');
+      }).catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function fmDelete() {
+    if (!fm.currentFile) return;
+    var p = fm.currentFile.path;
+    var danger = fm.currentFile.dangerous;
+    var msg = (danger ? t('fm.confirmDeleteDanger') : t('fm.confirmDelete')) + ' ' + p + '?';
+    if (!confirm(msg)) return;
+    api('/api/fs/delete?path=' + encodeURIComponent(p) + (danger ? '&force=1' : ''),
+      { method: 'POST', body: {} })
+      .then(function () {
+        fm.currentFile = null; fm.dirty = false;
+        fmEditor.setValue('');
+        fmUpdateUi();
+        fmList();
+        toast(t('fm.toastDeleted'), 'ok');
+      }).catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function fmDownload() {
+    if (!fm.currentFile) return;
+    fetch('/api/fs/file?path=' + encodeURIComponent(fm.currentFile.path),
+      { headers: { 'X-Auth-Token': state.token } })
+      .then(function (res) {
+        if (res.status === 401) { showLogin(); throw new Error(t('err.loginRequired')); }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.blob();
+      })
+      .then(function (blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fm.currentFile.name;
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      })
+      .catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function fmNewFile() {
+    var name = prompt(t('fm.newFilePrompt'), 'newfile.txt');
+    if (!name) return;
+    name = name.trim();
+    if (!name) { toast(t('fm.emptyName'), 'error'); return; }
+    var p = fmJoin(fm.path, name);
+    putRaw(p, '').then(function () {
+      fmList();
+      toast(t('fm.toastCreated') + ' ' + name, 'ok');
+    }).catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function fmNewDir() {
+    var name = prompt(t('fm.newDirPrompt'), 'newdir');
+    if (!name) return;
+    name = name.trim();
+    if (!name) { toast(t('fm.emptyName'), 'error'); return; }
+    var p = fmJoin(fm.path, name);
+    api('/api/fs/mkdir?path=' + encodeURIComponent(p), { method: 'POST', body: {} })
+      .then(function () {
+        fmList();
+        toast(t('fm.toastCreated') + ' ' + name, 'ok');
+      }).catch(function (err) { toast(err.message, 'error'); });
+  }
+
+  function fmUpload() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = function () {
+      var f = input.files[0];
+      if (!f) return;
+      var p = fmJoin(fm.path, f.name);
+      var rd = new FileReader();
+      rd.onload = function () {
+        putRaw(p, rd.result).then(function () {
+          fmList();
+          toast(t('fm.toastUploaded') + ' ' + f.name, 'ok');
+        }).catch(function (err) { toast(err.message, 'error'); });
+      };
+      rd.onerror = function () { toast(t('err.emptyResponse'), 'error'); };
+      rd.readAsText(f);
+    };
+    input.click();
+  }
+
+  /* ---------- 更新（批量上传覆盖） ---------- */
+  function onUpFilesChange() {
+    var files = Array.prototype.slice.call($('up-files').files || []);
+    var base = ($('up-base').value || '/').trim() || '/';
+    fm.rows = files.map(function (f) {
+      var rel = f.webkitRelativePath || f.name;
+      return { file: f, rel: rel, target: fmJoin(base, rel), size: f.size };
+    });
+    renderUpPreview(fm.rows);
+    $('up-start').disabled = fm.rows.length === 0 || fm.uploading;
+  }
+
+  function renderUpPreview(rows) {
+    var elBox = $('up-preview');
+    elBox.innerHTML = '';
+    if (!rows.length) {
+      elBox.appendChild(el('div', t('fm.upHint'), 'muted'));
+      return;
+    }
+    var total = rows.reduce(function (s, r) { return s + r.size; }, 0);
+    elBox.appendChild(el('div',
+      t('fm.upCount') + ' ' + rows.length + '  ·  ' + t('fm.upTotal') + ' ' + fmSize(total),
+      'up-count'));
+    rows.forEach(function (r) {
+      var row = el('div', '', 'up-row');
+      row.appendChild(el('span', r.target, 'up-target'));
+      row.appendChild(el('span', fmSize(r.size), 'up-size muted'));
+      elBox.appendChild(row);
+    });
+  }
+
+  function readFileText(file) {
+    return new Promise(function (resolve, reject) {
+      var rd = new FileReader();
+      rd.onload = function () { resolve(rd.result); };
+      rd.onerror = function () { reject(new Error('read failed')); };
+      rd.readAsText(file);
+    });
+  }
+
+  function startUpload() {
+    if (fm.uploading || !fm.rows.length) return;
+    if (!confirm(t('fm.upConfirm'))) return;
+    fm.uploading = true;
+    $('up-start').disabled = true;
+    var prog = $('up-progress');
+    var result = $('up-result');
+    prog.innerHTML = '';
+    result.innerHTML = '';
+    var rows = fm.rows;
+    var ok = 0, fail = 0, i = 0;
+
+    function draw() {
+      prog.innerHTML = '<div class="up-bar"><div class="up-bar-inner" style="width:' +
+        Math.round(i / rows.length * 100) + '%"></div></div>' +
+        '<div class="muted">' + t('fm.upProgress') + ' ' + i + '/' + rows.length +
+        ' — ' + esc(rows[i - 1] ? rows[i - 1].target : '') + '</div>';
+    }
+
+    function next() {
+      if (i >= rows.length) {
+        fm.uploading = false;
+        $('up-start').disabled = false;
+        finishUpload(ok, fail);
+        return;
+      }
+      var r = rows[i];
+      readFileText(r.file).then(function (text) {
+        return putRaw(r.target, text);
+      }).then(function () {
+        ok++; i++; draw(); next();
+      }).catch(function (err) {
+        fail++; i++;
+        result.appendChild(el('div', t('fm.upFailOne') + ' ' + r.target + ' — ' + err.message, 'up-fail'));
+        draw(); next();
+      });
+    }
+    draw();
+    next();
+  }
+
+  function finishUpload(ok, fail) {
+    var result = $('up-result');
+    result.appendChild(el('div',
+      fail === 0
+        ? t('fm.upDone') + ' ' + ok + ' ' + t('fm.upFiles')
+        : t('fm.upPartial') + ' ' + ok + '/' + (ok + fail),
+      fail === 0 ? 'up-ok' : 'up-warn'));
+    var btn = document.createElement('button');
+    btn.className = 'btn primary';
+    btn.textContent = t('fm.upReboot');
+    btn.onclick = function () {
+      if (!confirm(t('confirm.reboot'))) return;
+      api('/api/reboot', { method: 'POST', body: {} }).then(function () { toast(t('toast.rebooting')); });
+    };
+    result.appendChild(btn);
+    result.appendChild(el('div', t('fm.upRebootNote'), 'muted'));
+  }
+
   /* ---------- 启动 ---------- */
   applyI18n();
   initEditor();
+  initFmEditor();
   bind();
   refreshPrograms();
   pollStatus();

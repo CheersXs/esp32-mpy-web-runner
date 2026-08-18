@@ -20,6 +20,7 @@
       <span id="ip-badge" class="badge" data-i18n-title="top.ipBadge">…</span>
       <button id="btn-lang" class="btn ghost" data-i18n-title="top.langTitle">EN</button>
       <button id="btn-settings" class="btn ghost" data-i18n="top.settings" data-i18n-title="top.settingsTitle">⚙ 设置</button>
+      <button id="btn-filemgr" class="btn ghost" data-i18n="top.filemgr" data-i18n-title="top.filemgrTitle">📁 文件管理</button>
       <button id="btn-login" class="btn ghost hidden" data-i18n="top.login">登录</button>
       <button id="btn-reboot" class="btn ghost" data-i18n="top.reboot" data-i18n-title="top.rebootTitle">↻ 重启</button>
     </div>
@@ -155,6 +156,66 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
+
+<!-- 文件管理覆盖层（浏览 + 更新） -->
+<div id="filemgr" class="overlay hidden">
+  <div class="fm-head">
+    <button id="fm-close" class="btn ghost" data-i18n="fm.close">✕ 返回</button>
+    <span class="fm-title" data-i18n="fm.title">📁 文件管理</span>
+    <div class="fm-tabs">
+      <button id="fm-tab-browse" class="fm-tab active" data-i18n="fm.tabBrowse">浏览</button>
+      <button id="fm-tab-update" class="fm-tab" data-i18n="fm.tabUpdate">更新</button>
+    </div>
+  </div>
+
+  <!-- 浏览：设备文件系统 -->
+  <div id="fm-browse" class="fm-body">
+    <div class="fm-toolbar">
+      <button id="fm-up" class="btn ghost small" data-i18n="fm.up">⬆ 上级</button>
+      <span id="fm-path" class="fm-path">/</span>
+      <span class="fm-toolbar-right">
+        <button id="fm-newfile" class="btn ghost small" data-i18n="fm.newFile">＋ 新建文件</button>
+        <button id="fm-newdir" class="btn ghost small" data-i18n="fm.newDir">＋ 新建目录</button>
+        <button id="fm-upload" class="btn ghost small" data-i18n="fm.upload">⬆ 上传</button>
+        <button id="fm-refresh" class="btn ghost small" data-i18n="fm.refresh">↻ 刷新</button>
+      </span>
+    </div>
+    <div id="fm-warn" class="fm-warn hidden"></div>
+    <div class="fm-split">
+      <div class="fm-list-wrap">
+        <ul id="fm-list" class="fm-list"></ul>
+      </div>
+      <div class="fm-editor-wrap">
+        <div id="fm-fileinfo" class="muted"></div>
+        <div id="fm-editor"></div>
+        <div class="fm-editor-actions">
+          <button id="fm-save" class="btn primary" disabled data-i18n="fm.save">💾 保存</button>
+          <button id="fm-rename" class="btn ghost" disabled data-i18n="fm.rename">✎ 重命名</button>
+          <button id="fm-download" class="btn ghost" disabled data-i18n="fm.download">⬇ 下载</button>
+          <button id="fm-delete" class="btn ghost danger-text" disabled data-i18n="fm.delete">🗑 删除</button>
+          <span id="fm-save-msg" class="muted"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 更新：批量上传覆盖应用层代码 -->
+  <div id="fm-update" class="fm-body hidden">
+    <div class="up-warn" data-i18n="fm.upWarn">⚠️ 上传将覆盖设备上的同名文件！修改 lib/ 与 www/ 应用层代码后，需重启板子才会生效。</div>
+    <div class="up-actions">
+      <button id="up-pick" class="btn ghost" data-i18n="fm.upPick">📂 选择本地文件夹或文件</button>
+      <input type="file" id="up-files" multiple webkitdirectory class="hidden">
+      <label data-i18n="fm.upBaseLabel">目标根目录（设备端，默认 /）</label>
+      <input id="up-base" type="text" value="/">
+      <button id="up-start" class="btn primary" disabled data-i18n="fm.upStart">🚀 开始上传</button>
+    </div>
+    <div id="up-preview" class="up-preview">
+      <div class="muted" data-i18n="fm.upHint">选择文件后这里会显示将上传到设备的文件与目标路径。</div>
+    </div>
+    <div id="up-progress" class="up-progress"></div>
+    <div id="up-result" class="up-result"></div>
+  </div>
+</div>
 
 <input type="file" id="file-upload" accept=".py,.txt" class="hidden">
 

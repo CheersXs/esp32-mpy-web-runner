@@ -77,6 +77,10 @@ def main():
 
     # 2) WiFi 就绪后再加载重模块：最大的模块（web→microdot）最先，小模块随后，
     #    每个之间 gc.collect()，让各编译峰值各落在最新鲜的堆里。
+    #    顺序固定为 web → runner → config → console（见 docs/C3_PORTING_GUIDE.md，
+    #    顺序不可乱，插入任何模块都会挤占 split-heap 导入窗口 → wifi 数据通路饿死）。
+    #    fsapi/fsmgr（v2.2.0 文件管理）不参与本序列：由 web.create_app() 在 GC
+    #    堆稳定后延迟注册（fsapi.py 自身设计纪律，HEAD 真机验证安全）。
     import web
     gc.collect()
     import runner as runner_mod
