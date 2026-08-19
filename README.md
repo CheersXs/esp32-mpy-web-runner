@@ -1,4 +1,4 @@
-# ESP32 MPY Web Runner v2.2.0
+# ESP32 MPY Web Runner v2.2.1
 
 **中文 | [English](README_EN.md)**
 
@@ -86,14 +86,15 @@
 │       ├── boot.py
 │       ├── c3_config.py        # C3 配置（WiFi / OLED 引脚 / 端口）
 │       ├── www/index.html      # C3 内联单连接页面（build_inline.py 生成）
-│       ├── www/cm/             # CodeMirror gzip 分片 cm-part0..7.js.gz（build 生成）
+│       ├── www/cm/             # CodeMirror gzip 分片 cm-part0..7.js.gz（build_cm.py 生成）
 │       └── examples/
 │           └── oled_loop.py    # C3 专属 OLED 示例
 ├── docs/
 │   └── C3_PORTING_GUIDE.md     # C3 适配技术说明（内存根因与模块加载顺序）
 └── tools/
     ├── upload.py               # 一键上传（--target 选择目标板）
-    ├── build_inline.py         # 生成 C3 内联单连接页面
+    ├── build_inline.py         # 生成 C3 内联单连接页面（不碰 cm 分片）
+    ├── build_cm.py             # 生成 C3 CodeMirror gzip 分片（仅动 CM 源才需重跑）
     └── smoke_test.py           # PC 端冒烟测试（无需板子）
 ```
 

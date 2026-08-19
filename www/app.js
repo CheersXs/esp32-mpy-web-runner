@@ -760,6 +760,14 @@
   function pollStatus() {
     api('/api/status').then(function (data) {
       state.sys = data.sys;
+      var ver = state.sys ? state.sys.app_version : '';
+      var brd = state.sys ? state.sys.board : '';
+      if (brd === 'esp32c3') brd = 'C3';
+      else if (brd === 'esp32s3') brd = 'S3';
+      else if (brd) brd = brd.toUpperCase();
+      var tv = $('title-ver');
+      if (tv) tv.textContent = ver ? (' ' + ver + (brd ? ' · ' + brd : '')) : '';
+      document.title = 'ESP32 Web Runner' + (ver ? ' ' + ver : '');
       var wasRunning = currentRunning();
       state.programs = data.programs || [];
       renderList(state.current);

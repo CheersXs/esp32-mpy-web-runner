@@ -178,6 +178,7 @@ def _sys_info():
         'net': net,
         'version': sys.version,
         'app_version': config.VERSION,
+        'board': config.board(),
     }
 
 

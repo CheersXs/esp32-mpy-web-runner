@@ -1,7 +1,7 @@
 import json
 import os
 
-VERSION = '2.2.0'
+VERSION = '2.2.1'
 
 CONFIG_PATH = '/config.json'
 
